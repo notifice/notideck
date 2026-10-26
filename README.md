@@ -10,7 +10,7 @@
 > If you'd rather not run AI-written software (especially something that sends keyboard input and opens network
 > connections on your PC), please don't use it. Like any GPL software, it comes with no warranty.
 
-Notideck turns an old Android phone (Android 8+) into a Stream Deck-style controller and webcam for Windows and Linux PCs. The phone shows keys, dials and sliders that press hotkeys, control volume and media, run OBS, launch apps and call plugins. It connects over USB (`adb reverse`) or Wi-Fi (TLS, paired once with a QR code). You set the deck up in a config page served by the PC agent.
+Notideck turns an old Android phone (Android 8+) into a Stream Deck-style controller, webcam and microphone for Windows and Linux PCs. The phone shows keys, dials and sliders that press hotkeys, control volume and media, run OBS, launch apps and call plugins. It connects over USB (`adb reverse`) or Wi-Fi (TLS, paired once with a QR code). You set the deck up in a config page served by the PC agent.
 
 Licence: GPL-3.0-or-later. Release notes: [`CHANGELOG.md`](CHANGELOG.md).
 
@@ -21,9 +21,12 @@ Licence: GPL-3.0-or-later. Release notes: [`CHANGELOG.md`](CHANGELOG.md).
 - Actions: hotkeys, type text, open URL, launch app, run command, volume, media, OBS, plugins.
 - Per-app volume mixer (Windows: WASAPI; Linux: `pactl`, no meters).
 - Media session control: now playing, transport, seek, shuffle, repeat, player volume (Windows GSMTC, Linux MPRIS).
-- Auto profile switching by focused app (Windows; Linux on X11).
+- Auto profile switching by focused app (Windows; Linux on KDE Plasma Wayland, Sway, Hyprland and X11; not GNOME Wayland yet).
 - OBS Studio control over obs-websocket.
-- Webcam: the phone camera as a Windows 11 virtual camera ("Notideck Camera"), with lens, torch, zoom and image settings. Linux webcam is not available yet.
+- Webcam: the phone camera as "Notideck Camera" in Zoom, Discord, OBS, browsers and more, with lens, torch, zoom and image settings. Windows 11 uses its virtual camera API; Linux uses the v4l2loopback kernel module (one-time setup from the Camera tab).
+- Microphone: the phone mic as an input for Discord, OBS, Zoom and more. Linux gets a "Notideck Microphone" device (PipeWire or PulseAudio). Windows needs the free virtual audio cable **[VB-CABLE](https://vb-audio.com/Cable/)** (download, unzip, run `VBCABLE_Setup_x64.exe` as administrator, then pick "CABLE Output" in your app; steps in the [user guide](docs/USER-GUIDE.md#microphone)).
+- Camera preview tile on the deck, and deck sleep (black screen with a faint clock after 2 minutes idle; first touch wakes it).
+- Native app window and tray icon on Windows and Linux.
 - Plugins: bundled Clock & Timer, HTTP request and Weather; your own plugins in any language.
 - USB and Wi-Fi connection, mDNS discovery, QR pairing, mutual TLS.
 - First-run setup wizard that installs the phone app over USB.
@@ -107,4 +110,12 @@ The spec is [`docs/SPEC.md`](docs/SPEC.md) (decisions in section 14). Architectu
 
 GPL-3.0-or-later. See [`LICENSE`](LICENSE).
 
-Notideck builds on open-source libraries and bundles Google's Android platform-tools (`adb`) in the Windows package. Their licences (Apache-2.0, MIT, BSD, ISC, MPL-2.0 and others, all GPL-compatible) and the attribution notes are listed in [`THIRD_PARTY.md`](THIRD_PARTY.md).
+## Thanks
+
+Notideck is built on open-source work by many people: Rust and its crates (Tokio, axum, rustls, ring, serde, wry and
+tao from the Tauri project, windows-rs and hundreds more), Kotlin, Jetpack Compose, CameraX, Media3 ExoPlayer, Square's
+Wire, Conscrypt, ZXing, Google's Android platform-tools, NSIS and AppImage. Weather data comes from
+[Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0). Thank you all.
+
+The full list with licences is in [`THIRD_PARTY.md`](THIRD_PARTY.md). Every release package also includes
+`THIRD_PARTY_LICENSES.txt` with the complete licence texts.

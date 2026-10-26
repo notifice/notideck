@@ -28,6 +28,14 @@ controller and webcam for your Windows or Linux PC.
   no extra setup.
 - **Phone as a webcam.** Camera image settings on the phone (focus, exposure, white balance,
   stabilisation, flash and more) from the Camera tab.
+- **Phone as a microphone.** Use the phone mic in Discord, OBS, Zoom and more from the Microphone tab, with
+  gain, mute and on-phone noise suppression. Linux: a "Notideck Microphone" input (PipeWire or PulseAudio).
+  Windows: plays into the free [VB-CABLE](https://vb-audio.com/Cable/); pick "CABLE Output" as
+  your input. Notideck keeps your default speaker and mic from switching to the cable.
+- **Linux webcam.** "Notideck Camera" through the v4l2loopback kernel module, set up once from the Camera tab.
+- **Linux app window and tray**, and auto-switch on KDE Plasma Wayland, Sway and Hyprland as well as X11.
+- **Camera preview tile and deck sleep.** A deck tile shows the phone camera (tap to preview, long press for
+  full screen). The deck sleeps after 2 minutes idle (black screen, faint clock, first touch wakes it).
 - **Plugins.** Out-of-process plugins in any language (see `docs/PLUGINS.md`). Bundled: clock, HTTP
   requests and weather. Plugins can play an HLS stream on the phone (`phone.play`).
 - **Phone look.** Side rail with Home, Back, page dots and up to three pinned keys, swipe between pages,
@@ -38,15 +46,18 @@ controller and webcam for your Windows or Linux PC.
 
 ### Platforms
 
-- **Windows 11 (x64):** everything above, including the webcam (virtual camera).
-- **Windows 10 (x64):** deck, mixer, media and plugins. Webcam is not supported.
-- **Linux (x86_64):** deck, mixer, media, OBS and plugins, over USB or Wi-Fi.
+- **Windows 11 (x64):** everything above, including the webcam (virtual camera). The phone microphone needs
+  the free [VB-CABLE](https://vb-audio.com/Cable/).
+- **Windows 10 (x64):** deck, mixer, media, microphone and plugins. Webcam is not supported.
+- **Linux (x86_64):** everything above, over USB or Wi-Fi. The webcam needs the v4l2loopback kernel module.
+  Auto-switch works on KDE Plasma (Wayland), Sway, Hyprland and X11.
 - **Phone:** Android 8.0 or newer.
 
 ### Known limitations
 
-- The Linux webcam (v4l2loopback) is not available yet.
-- Linux runs without its own window: the config UI opens in your web browser.
+- Auto-switch does not work on GNOME Wayland yet.
+- The phone microphone on Windows has not been tested on real hardware yet (it is tested on Linux).
+- The Linux webcam has been tested with ffmpeg; browsers, OBS and Discord as readers are not tested yet.
 - The webcam does not work on Windows 10.
 - The phone app is debug-signed, so it is installed from the bundled APK (not from an app store) and
   future updates must be installed over it from the same source.

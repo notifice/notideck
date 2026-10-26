@@ -14,6 +14,7 @@ Notideck turns an old Android phone into a Stream Deck-style controller and webc
 - [Media controls](#media-controls)
 - [OBS](#obs)
 - [Webcam](#webcam)
+- [Microphone](#microphone)
 - [Plugins](#plugins)
 - [Settings](#settings)
 - [Troubleshooting](#troubleshooting)
@@ -26,7 +27,8 @@ Notideck turns an old Android phone into a Stream Deck-style controller and webc
 |---|---|
 | Phone | Android 8.0 or newer. USB debugging is needed for USB mode and for installing the app from the PC. |
 | PC | Windows 10 or 11 (64-bit), or Linux x86_64. |
-| Webcam | Windows 11 only for now. The Linux webcam is not available yet. |
+| Webcam | Windows 11, or Linux with the v4l2loopback kernel module. Not on Windows 10. |
+| Microphone | Linux: nothing extra. Windows: the free [VB-CABLE](https://vb-audio.com/Cable/). |
 | Wi-Fi mode | Phone and PC on the same network. |
 
 ## Install on Windows
@@ -52,7 +54,7 @@ Notideck opens a window and puts an icon in the system tray. Closing the window 
 
 ## Install on Linux
 
-You need an x86_64 desktop and a web browser. The Linux build runs without a window of its own. It opens the config page in your browser.
+You need an x86_64 desktop. Notideck opens its own window and a tray icon. This needs WebKitGTK 4.1, GTK 3 and libayatana-appindicator from your distribution (Debian/Ubuntu: `libwebkit2gtk-4.1-0 libgtk-3-0 libayatana-appindicator3-1`; Arch: `webkit2gtk-4.1 gtk3 libayatana-appindicator`) and a tray host (GNOME needs the AppIndicator extension). Without a display, or with `--headless`, it runs without a window and opens the config page in your browser.
 
 ### AppImage
 
@@ -197,7 +199,7 @@ The new profile dialog can also add an auto-switch rule for the template's app.
 
 ## Auto profile switching
 
-The **Auto-switch** tab changes the profile on the phone to match the app you are using. Windows works fully. Linux works on X11 only for now.
+The **Auto-switch** tab changes the profile on the phone to match the app you are using. Windows works fully. Linux works on KDE Plasma (Wayland), Sway, Hyprland and X11; GNOME on Wayland is not supported yet.
 
 1. Turn on **Auto-switch**.
 2. Press **Add rule** (or pick an app from the recent apps list). Choose the app and the profile to show.
@@ -233,15 +235,32 @@ Keys show live state, for example a red record key while recording.
 
 ## Webcam
 
-The phone camera can act as a webcam on Windows 11. On Windows 10 and on Linux this is not available yet.
+The phone camera can act as a webcam on Windows 11 and on Linux. Windows 10 is not supported.
 
-1. Open the **Camera** tab and press **Install webcam (needs admin once)**. Allow the administrator prompt. If you used the setup program or the wizard, this may already be done. You can also install from the wizard step "A few extras".
-2. In Zoom, Teams, Discord, OBS or the Windows Camera app, pick **Notideck Camera**.
+1. Open the **Camera** tab.
+   - Windows 11: press **Install webcam (needs admin once)** and allow the administrator prompt. If you used the setup program or the wizard, this may already be done. You can also install from the wizard step "A few extras".
+   - Linux: install the v4l2loopback kernel module first (Arch / CachyOS / Debian / Ubuntu: `v4l2loopback-dkms`; Fedora: `v4l2loopback` from RPM Fusion). Then press **Set up webcam (asks for password)** and enter your password once. Notideck sets the module to load at boot.
+2. In Zoom, Teams, Discord, OBS, your browser or the Windows Camera app, pick **Notideck Camera**.
 3. The phone camera starts when an app opens the camera. It stops a few seconds after the app closes. Keep the phone connected.
 
 On the Camera tab you can choose the lens, use the torch, set zoom and adjust the picture. A test view shows what apps will get. **Refresh picture** forces a new frame.
 
 To remove the driver: Settings > **Webcam driver** > **Uninstall...**.
+
+## Microphone
+
+The phone microphone can be an input for Discord, OBS, Zoom and other apps. Open the **Microphone** tab.
+
+- **Linux:** nothing to install. Turn the microphone on, allow microphone access on the phone, and pick **Notideck Microphone** as the input in your app.
+- **Windows:** Windows can't add a microphone without a signed driver, so Notideck plays the phone sound into a free virtual audio cable:
+  1. Download [VB-CABLE](https://vb-audio.com/Cable/) by VB-Audio and unzip it.
+  2. Right-click `VBCABLE_Setup_x64.exe`, choose **Run as administrator** and press **Install Driver**. Restart Windows if the installer asks.
+  3. Notideck finds the cable by itself. Turn the microphone on in the Microphone tab and allow microphone access on the phone.
+  4. In your app pick **CABLE Output (VB-Audio Virtual Cable)** as the input. Discord: User Settings > Voice & Video > Input Device.
+
+  With **Keep my default speaker and mic** on, Notideck stops Windows from switching your default speaker or mic to the cable.
+
+The tab also has mute, gain, the output device and **Noise suppression and echo cancellation** (done on the phone).
 
 ## Plugins
 
@@ -275,6 +294,7 @@ Open the **Settings** tab.
 | Allow Wi-Fi connections | Lets paired phones connect over the network. Needs a restart of Notideck. On by default. |
 | Theme | System, Dark or Light for the config page. |
 | Phone theme | Black (AMOLED), Graphite, Dusk, Tide (dark), or Cream, Lavender, Mint (light). Applies to the phone at once. |
+| Phone screen | **Sleep when idle** (on by default) blacks out the deck and dims the backlight after the time in **After** (2 minutes by default); the first touch only wakes it. Optional wake when the PC uses the camera or mic, and a faint clock while asleep. |
 | Keyboard access | Status of keyboard injection, with **Fix...** on Linux when it needs permission. |
 | Run setup again | Reopens the setup wizard. |
 | Webcam driver | Shows the driver state and lets you uninstall it. |
