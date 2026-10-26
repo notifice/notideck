@@ -172,7 +172,9 @@ pub fn nv12_to_yuyv(nv12: &[u8], width: u32, height: u32, out: &mut [u8]) {
     for (row, out_row) in out.chunks_exact_mut(w * 2).enumerate() {
         let y_row = &y_plane[row * w..(row + 1) * w];
         let uv_row = &uv_plane[(row / 2) * w..(row / 2 + 1) * w];
-        for ((o, y), uv) in out_row.chunks_exact_mut(4).zip(y_row.chunks_exact(2)).zip(uv_row.chunks_exact(2)) {
+        for ((o, y), uv) in
+            out_row.as_chunks_mut::<4>().0.iter_mut().zip(y_row.as_chunks::<2>().0).zip(uv_row.as_chunks::<2>().0)
+        {
             o[0] = y[0];
             o[1] = uv[0];
             o[2] = y[1];
@@ -975,10 +977,10 @@ mod tests {
     fn nv12_to_yuyv_full_size_flat() {
         let (w, h) = (1920u32, 1080u32);
         let mut nv12 = vec![0x10u8; nv12_len(w, h)];
-        nv12[(w * h) as usize..].chunks_exact_mut(2).for_each(|c| c.copy_from_slice(&[0x40, 0xC0]));
+        nv12[(w * h) as usize..].as_chunks_mut::<2>().0.iter_mut().for_each(|c| *c = [0x40, 0xC0]);
         let mut out = vec![0u8; (w * h * 2) as usize];
         nv12_to_yuyv(&nv12, w, h, &mut out);
-        assert!(out.chunks_exact(4).all(|c| c == [0x10, 0x40, 0x10, 0xC0]));
+        assert!(out.as_chunks::<4>().0.iter().all(|c| *c == [0x10, 0x40, 0x10, 0xC0]));
     }
 
     #[test]

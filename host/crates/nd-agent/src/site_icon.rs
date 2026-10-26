@@ -325,7 +325,7 @@ fn dib_to_png(d: &[u8]) -> Option<Vec<u8>> {
     }
     if let Some(m) = mask {
         // 32-bit icons carry their own alpha; the mask only matters when that alpha is all zero.
-        let has_alpha = bpp == 32 && rgba.chunks_exact(4).any(|p| p[3] != 0);
+        let has_alpha = bpp == 32 && rgba.as_chunks::<4>().0.iter().any(|p| p[3] != 0);
         if !has_alpha {
             for y in 0..h {
                 let src = h - 1 - y;
