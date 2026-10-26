@@ -51,8 +51,11 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
         run: |
           if [ -n "$KEYSTORE_B64" ]; then
-            mkdir -p ~/.android
-            echo "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+            ks="$RUNNER_TEMP/notideck-debug.keystore"
+            echo "$KEYSTORE_B64" | base64 -d > "$ks"
+            echo "NOTIDECK_DEBUG_KEYSTORE=$ks" >> "$GITHUB_ENV"
+            echo "Signing certificate:"
+            keytool -list -v -keystore "$ks" -storepass android -alias androiddebugkey | grep 'SHA256:'
           else
             echo "::warning::ANDROID_DEBUG_KEYSTORE not set; the APK is signed with a throwaway key"
           fi
@@ -61,6 +64,11 @@ jobs:
         run: |
           chmod +x android/gradlew scripts/*.sh
           scripts/release.sh --skip-checks
+
+      - name: Show APK signer
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$apksigner" verify --print-certs dist/Notideck-*-phone.apk | grep 'SHA-256'
 
       - uses: softprops/action-gh-release@v2
         with:

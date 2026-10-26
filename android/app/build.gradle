@@ -19,6 +19,20 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // CI release builds pass the project's debug key explicitly (NOTIDECK_DEBUG_KEYSTORE = path to a copy of
+    // ~/.android/debug.keystore), so released APKs install over each other. Local builds use the default debug key.
+    signingConfigs {
+        debug {
+            def ks = System.getenv('NOTIDECK_DEBUG_KEYSTORE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword 'android'
+                keyAlias 'androiddebugkey'
+                keyPassword 'android'
+            }
+        }
+    }
+
     buildTypes {
         release {
             // Conscrypt ships native TLS code per ABI; real phones are arm only (x86 = emulators).
