@@ -150,6 +150,10 @@ Uninstall
 Licence: GPL-3.0-or-later (see LICENSE).
 TXT
 sed -i 's/$/\r/' "$OUT/README.txt"
+# Licences of the bundled open-source code (MIT/Apache/BSD notices must travel with the binary).
+"$REPO/scripts/third-party-licenses.sh" "$OUT/THIRD_PARTY_LICENSES.txt" --target "$TARGET"
+cp "$REPO/THIRD_PARTY.md" "$OUT/THIRD_PARTY.md"
+sed -i 's/$/\r/' "$OUT/THIRD_PARTY_LICENSES.txt" "$OUT/THIRD_PARTY.md"
 
 # --- zip ---
 if command -v zip >/dev/null; then

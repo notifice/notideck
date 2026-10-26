@@ -82,13 +82,18 @@ if [ ${#APK_ARG[@]} -gt 0 ]; then
   echo "$APK_OUT"
 fi
 
+step "Third-party licences (combined, whole dependency tree)"
+TPL_OUT="$DIST/Notideck-$VERSION-THIRD_PARTY_LICENSES.txt"
+"$REPO/scripts/third-party-licenses.sh" "$TPL_OUT"
+
 step "Checksums"
 ARTEFACTS=()
 for f in "$DIST/Notideck-$VERSION-windows-x64-setup.exe" \
          "$DIST/Notideck-$VERSION-windows-x64.zip" \
          "$DIST/Notideck-$VERSION-linux-x86_64.tar.gz" \
          "$DIST/Notideck-$VERSION-x86_64.AppImage" \
-         "$APK_OUT"; do
+         "$APK_OUT" \
+         "$TPL_OUT"; do
   [ -f "$f" ] && ARTEFACTS+=("$(basename "$f")")
 done
 [ ${#ARTEFACTS[@]} -gt 0 ] || { echo "no release artefacts found in $DIST" >&2; exit 1; }

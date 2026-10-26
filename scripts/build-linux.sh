@@ -69,6 +69,10 @@ install -m644 "$PKG/notideck.desktop" "$STAGE/share/applications/notideck.deskto
 install -m644 "$PKG/notideck.png" "$STAGE/share/icons/hicolor/256x256/apps/notideck.png"
 install -m644 "$PKG/70-notideck-uinput.rules" "$PKG/notideck-agent.service" "$STAGE/share/notideck/"
 install -m644 "$VENDOR/platform-tools/NOTICE.txt" "$STAGE/share/notideck/adb-NOTICE.txt"
+# Licences of the bundled open-source code (MIT/Apache/BSD notices must travel with the binary).
+mkdir -p "$STAGE/share/doc/notideck"
+"$REPO/scripts/third-party-licenses.sh" "$STAGE/share/doc/notideck/THIRD_PARTY_LICENSES.txt" --target x86_64-unknown-linux-gnu
+install -m644 "$REPO/THIRD_PARTY.md" "$STAGE/share/doc/notideck/THIRD_PARTY.md"
 
 # --- tarball ---
 OUT="$DIST/$NAME"
@@ -76,6 +80,7 @@ rm -rf "$OUT" "$DIST/$NAME.tar.gz"
 mkdir -p "$OUT"
 cp -a "$STAGE/bin" "$STAGE/lib" "$STAGE/share" "$OUT/"
 cp "$REPO/LICENSE" "$OUT/LICENSE"
+cp "$STAGE/share/doc/notideck/THIRD_PARTY_LICENSES.txt" "$STAGE/share/doc/notideck/THIRD_PARTY.md" "$OUT/"
 install -m755 "$PKG/install.sh" "$PKG/uninstall.sh" "$OUT/"
 sed "s/@VERSION@/$VERSION/g" "$PKG/README.txt" > "$OUT/README.txt"
 tar -C "$DIST" --owner=0 --group=0 --numeric-owner -czf "$DIST/$NAME.tar.gz" "$NAME"

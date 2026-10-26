@@ -58,7 +58,7 @@ $SUDO rm -f "$MAN" "$PREFIX/share/notideck/uninstall.sh"
 
 # Remove the generated icon cache and now-empty directories (never the prefix itself).
 $SUDO rm -f "$PREFIX/share/icons/hicolor/icon-theme.cache"
-for d in lib share/notideck share/icons share/applications; do
+for d in lib share/notideck share/doc/notideck share/icons share/applications; do
   if [ -d "$PREFIX/$d" ]; then $SUDO find "$PREFIX/$d" -depth -type d -empty -delete 2>/dev/null || true; fi
 done
 systemctl --user daemon-reload >/dev/null 2>&1 || true

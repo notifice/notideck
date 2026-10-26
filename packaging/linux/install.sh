@@ -69,6 +69,8 @@ inst 644 "$SRC/share/notideck/adb-NOTICE.txt" "$PREFIX/share/notideck/adb-NOTICE
 inst 644 "$SRC/share/notideck/70-notideck-uinput.rules" "$PREFIX/share/notideck/70-notideck-uinput.rules"
 inst 644 "$SRC/share/notideck/notideck-agent.service" "$PREFIX/share/notideck/notideck-agent.service"
 inst 644 "$SRC/LICENSE" "$PREFIX/share/notideck/LICENSE"
+inst 644 "$SRC/share/doc/notideck/THIRD_PARTY.md" "$PREFIX/share/doc/notideck/THIRD_PARTY.md"
+inst 644 "$SRC/share/doc/notideck/THIRD_PARTY_LICENSES.txt" "$PREFIX/share/doc/notideck/THIRD_PARTY_LICENSES.txt"
 
 # Desktop caches (best effort).
 if command -v update-desktop-database >/dev/null; then

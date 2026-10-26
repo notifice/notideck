@@ -1,52 +1,101 @@
-# Third-party software
+# Third-party software and thanks
 
-Notideck is GPL-3.0-or-later. It uses and, in some builds, redistributes the components below under their own licences. All are compatible with GPL-3.0-or-later. This file is a summary, not legal advice. The authoritative licence text for each Rust crate is in its package, and `cargo metadata` lists every licence in the dependency tree.
+Notideck stands on the work of many open-source projects. Thank you to everyone who builds and maintains them.
 
-## Bundled in the Windows package
+Notideck itself is GPL-3.0-or-later. It uses, and in its release packages redistributes, the components below under
+their own licences. All of them are compatible with GPL-3.0-or-later. This file is a summary, not legal advice.
 
-| Component | Licence | Notes |
+The full licence text of every library compiled into Notideck ships with each release package as
+`THIRD_PARTY_LICENSES.txt`, and is attached to every GitHub release. `scripts/third-party-licenses.sh` generates it
+from `Cargo.lock`.
+
+## Bundled programs
+
+| Component | Licence | Where |
 |---|---|---|
-| Android platform-tools (`adb.exe`, `AdbWinApi.dll`, `AdbWinUsbApi.dll`) | Apache-2.0 (the Android SDK also carries other notices) | Downloaded unmodified from Google by `scripts/build-windows.sh`. The package ships `adb-NOTICE.txt` with the licence texts. |
-| `WebView2Loader.dll` | Microsoft WebView2 SDK licence (BSD-3-Clause style, redistribution allowed) | Loads the Evergreen WebView2 runtime that Windows 11 already includes. The runtime itself is not bundled. |
+| [Android platform-tools](https://developer.android.com/tools/releases/platform-tools) (`adb`) by Google | Apache-2.0 (plus the notices in `adb-NOTICE.txt`) | Windows and Linux packages. Downloaded unmodified from Google at build time. |
+| `WebView2Loader.dll` from the [Microsoft WebView2 SDK](https://developer.microsoft.com/microsoft-edge/webview2/) | BSD-3-Clause style, redistribution allowed | Windows package. The WebView2 runtime itself is part of Windows and is not bundled. |
+| [AppImage runtime](https://github.com/AppImage/type2-runtime), built in by [appimagetool](https://github.com/AppImage/appimagetool) | MIT | Linux AppImage |
+| [NSIS](https://nsis.sourceforge.io/) installer stub | zlib/libpng | Windows setup program |
 
-## Host agent (Rust crates)
+## PC app (Rust crates)
 
-Direct dependencies of note. `Cargo.lock` pins exact versions.
+Direct dependencies. `Cargo.lock` pins the exact versions, and `THIRD_PARTY_LICENSES.txt` covers the whole tree.
 
-| Crate | Licence | Used for |
+| Crates | Licence | Used for |
 |---|---|---|
-| tokio, axum, tower, tracing, serde, serde_json, anyhow, thiserror, bytes, uuid, chrono, regex, base64, hex | MIT or Apache-2.0 | runtime, web server, utilities |
-| prost, prost-build, protoc-bin-vendored | Apache-2.0 (protoc: BSD-3-Clause) | protobuf codegen |
-| rustls, tokio-rustls | Apache-2.0 or ISC or MIT | TLS |
-| ring | Apache-2.0 AND ISC (plus BoringSSL-derived code under OpenSSL/ISC terms) | crypto backend |
-| rcgen, x509-parser, hmac, sha2, subtle, rand | MIT or Apache-2.0 | certificates, pairing |
-| mdns-sd, if-addrs | MIT or Apache-2.0 | LAN discovery |
-| qrcode, png | MIT or Apache-2.0 | pairing QR code, PNG icons |
-| zune-jpeg | MIT or Apache-2.0 or Zlib | MPRIS album art |
-| wry, tao | MIT or Apache-2.0 | native window |
-| windows (windows-rs) | MIT or Apache-2.0 | Win32, WASAPI, GSMTC, Media Foundation |
-| zbus, evdev, x11rb, libc | MIT / MIT or Apache-2.0 | Linux D-Bus (MPRIS), uinput, X11 |
-| sysinfo, include_dir | MIT | system stats, embedded UI |
-| openh264 + openh264-sys2 (optional feature) | BSD-2-Clause | H.264 decode fallback, built from source |
+| [tokio](https://tokio.rs), tokio-tungstenite, futures-util | MIT | async runtime, WebSocket (OBS, plugins) |
+| [axum](https://github.com/tokio-rs/axum), tower, http-body-util | MIT | local config web server |
+| [serde](https://serde.rs), serde_json | MIT or Apache-2.0 | settings and JSON |
+| [tracing](https://github.com/tokio-rs/tracing), tracing-subscriber, tracing-appender | MIT | logs |
+| anyhow, thiserror, bytes, uuid, chrono, regex, url, hex, base64, rand, tempfile | MIT and/or Apache-2.0 | utilities |
+| [prost](https://github.com/tokio-rs/prost), prost-build | Apache-2.0 | protobuf messages |
+| [protoc-bin-vendored](https://github.com/stepancheg/rust-protoc-bin-vendored) (Google's `protoc`) | MIT (protoc: BSD-3-Clause) | protobuf code generation at build time |
+| [rustls](https://github.com/rustls/rustls), tokio-rustls | Apache-2.0 or ISC or MIT | TLS |
+| [ring](https://github.com/briansmith/ring) | Apache-2.0 AND ISC (parts derived from BoringSSL / OpenSSL) | cryptography |
+| [rcgen](https://github.com/rustls/rcgen), [x509-parser](https://github.com/rusticata/x509-parser) | MIT or Apache-2.0 | certificates |
+| hmac, sha2 ([RustCrypto](https://github.com/RustCrypto)), subtle | MIT or Apache-2.0; subtle: BSD-3-Clause | pairing |
+| webpki-roots | CDLA-Permissive-2.0 (Mozilla's CA list) | trusted roots for HTTPS |
+| [mdns-sd](https://github.com/keepsimple1/mdns-sd), if-addrs | MIT or Apache-2.0; if-addrs: MIT or BSD-3-Clause | Wi-Fi discovery |
+| [ureq](https://github.com/algesten/ureq) | MIT or Apache-2.0 | HTTP requests (site icons, plugins) |
+| [qrcode](https://github.com/kennytm/qrcode-rust), [png](https://github.com/image-rs/image-png) | MIT or Apache-2.0 | pairing QR code, icons |
+| [zune-jpeg](https://github.com/etemesi254/zune-image) | MIT or Apache-2.0 or Zlib | album art |
+| [jpeg-encoder](https://github.com/vstroebel/jpeg-encoder) | (MIT or Apache-2.0) AND IJG | camera preview images |
+| [resvg](https://github.com/linebender/resvg) | Apache-2.0 or MIT | plugin SVG icons |
+| [zip](https://github.com/zip-rs/zip2) | MIT | plugin packages |
+| [wry](https://github.com/tauri-apps/wry), [tao](https://github.com/tauri-apps/tao), [tray-icon](https://github.com/tauri-apps/tray-icon) (Tauri project), [gtk-rs](https://gtk-rs.org) | MIT and/or Apache-2.0 | app window and tray |
+| [windows-rs](https://github.com/microsoft/windows-rs), embed-resource | MIT or Apache-2.0; embed-resource: MIT | Windows APIs (input, audio, media, virtual camera) |
+| [zbus](https://github.com/dbus2/zbus), [evdev](https://github.com/emberian/evdev), [x11rb](https://github.com/psychon/x11rb), libc | MIT and/or Apache-2.0 | Linux D-Bus (MPRIS), keyboard input, X11 |
+| [sysinfo](https://github.com/GuillaumeGomez/sysinfo), include_dir | MIT | system stats, embedded config UI |
+| [openh264](https://github.com/ralfbiedert/openh264-rs) (optional feature, off by default) | BSD-2-Clause | H.264 decoding fallback, built from Cisco's source |
 
-Licence families across the whole tree: MIT, Apache-2.0, BSD-2/3-Clause, ISC, Zlib, Unicode-3.0, Unlicense, CC0, and **MPL-2.0** for `cssparser`, `cssparser-macros`, `dtoa-short`, `option-ext` and `selectors` (pulled in by the web view stack). MPL-2.0 is file-level copyleft: we use these crates unmodified, so there is no extra obligation beyond keeping their licence and source availability. No crate in the tree is GPL-incompatible.
+Licence families across the whole tree: MIT, Apache-2.0 (some with the LLVM exception), BSD-2/3-Clause, ISC, Zlib,
+Unicode-3.0, Unlicense, CC0, 0BSD, BSL-1.0, CDLA-Permissive-2.0, IJG, and **MPL-2.0** for `cssparser`,
+`cssparser-macros`, `dtoa-short`, `option-ext` and `selectors` (pulled in by the web view stack). MPL-2.0 is file-level
+copyleft: Notideck uses these crates unmodified, and their source is available from crates.io. No crate in the tree is
+GPL-incompatible.
 
-**H.264 and OpenH264.** Cisco's patent grant covers only the binaries Cisco builds. Notideck's optional `openh264` feature compiles the source, so it carries no Cisco patent licence. The default Windows path uses the OS's Media Foundation H.264 decoder instead, and the Android encoder is the phone's hardware MediaCodec.
+**JPEG.** This software is based in part on the work of the Independent JPEG Group (via `jpeg-encoder`).
 
-## Android app
+**H.264 and OpenH264.** Cisco's patent grant covers only the binaries Cisco builds. Notideck's optional `openh264`
+feature compiles the source, so it carries no Cisco patent licence. The default Windows path uses the Media Foundation
+H.264 decoder that ships with Windows, and the phone encodes with its own hardware encoder.
 
-| Library | Licence |
-|---|---|
-| AndroidX (core, activity, lifecycle), Jetpack Compose + Material 3, CameraX | Apache-2.0 |
-| Kotlin, kotlinx.coroutines | Apache-2.0 |
-| Wire (protobuf runtime) | Apache-2.0 |
-| Conscrypt (TLS 1.3 on Android 8-9) | Apache-2.0 |
-| ZXing core (QR scanning) | Apache-2.0 |
+## Phone app (Android)
+
+| Library | Licence | Used for |
+|---|---|---|
+| [AndroidX](https://developer.android.com/jetpack/androidx) core, activity, lifecycle | Apache-2.0 | app framework |
+| [Jetpack Compose](https://developer.android.com/compose) and Material 3 | Apache-2.0 | user interface |
+| [CameraX](https://developer.android.com/media/camera/camerax) | Apache-2.0 | QR code scanner camera |
+| [Media3 ExoPlayer](https://github.com/androidx/media) (+ HLS, UI) | Apache-2.0 | built-in stream player |
+| [Kotlin](https://kotlinlang.org) and [kotlinx.coroutines](https://github.com/Kotlin/kotlinx.coroutines) | Apache-2.0 | language and concurrency |
+| [Wire](https://github.com/square/wire) by Square | Apache-2.0 | protobuf messages |
+| [Conscrypt](https://github.com/google/conscrypt) | Apache-2.0 | TLS 1.3 on Android 8 and 9 |
+| [ZXing](https://github.com/zxing/zxing) core | Apache-2.0 | QR code scanning |
 
 ## Config UI
 
-The web UI in `host/ui/` is hand-written and has no vendored JavaScript or CSS libraries.
+The web UI in `host/ui/` is hand-written. It has no vendored JavaScript or CSS libraries, and its icons are drawn
+for this project.
+
+## Data and services
+
+- **Weather plugin:** [Weather data by Open-Meteo.com](https://open-meteo.com/), licensed
+  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). City search uses the Open-Meteo geocoding API, which is
+  based on [GeoNames](https://www.geonames.org/) (CC BY 4.0). Open-Meteo is free for non-commercial use.
+- **Phone microphone on Windows** works with [VB-CABLE](https://vb-audio.com/Cable/) by VB-Audio (free download,
+  not open source, not bundled).
+- **OBS control** talks to [OBS Studio](https://obsproject.com/)'s built-in
+  [obs-websocket](https://github.com/obsproject/obs-websocket) through its public protocol.
+
+## Build tools
+
+Releases are built with [Rust](https://www.rust-lang.org/) and Cargo, [mingw-w64](https://www.mingw-w64.org/),
+[Gradle](https://gradle.org/), the Android SDK, NSIS and appimagetool, on GitHub Actions.
 
 ## Ideas and prior art
 
-The design draws on Elgato Stream Deck (concept), scrcpy (the media-frame idea; no code copied), and OBS / obs-websocket (protocol used through its public API). Names and trademarks belong to their owners. Notideck is not affiliated with Elgato, Google, Microsoft or the OBS Project.
+The design draws on Elgato Stream Deck (the concept) and [scrcpy](https://github.com/Genymobile/scrcpy) (the idea of
+the media framing; no code copied). Names and trademarks belong to their owners. Notideck is not affiliated with
+Elgato, Google, Microsoft, Cisco, VB-Audio, Open-Meteo or the OBS Project.

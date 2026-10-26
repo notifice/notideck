@@ -80,4 +80,5 @@ jobs:
             dist/Notideck-*-linux-x86_64.tar.gz
             dist/Notideck-*-x86_64.AppImage
             dist/Notideck-*-phone.apk
+            dist/Notideck-*-THIRD_PARTY_LICENSES.txt
             dist/SHA256SUMS
