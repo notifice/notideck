@@ -783,8 +783,10 @@ mod tests {
         // Home (main profile = first stored) records pb
         svc.go_home(false).unwrap();
         let main = svc.main_profile_id().unwrap();
-        wait_for("home", || state.active_profile_id() == main);
-        assert_eq!(lock(&svc.nav).history.last().map(String::as_str), Some("pb"));
+        // the worker sets the active profile first and records the history right after: wait for both
+        wait_for("home", || {
+            state.active_profile_id() == main && lock(&svc.nav).history.last().map(String::as_str) == Some("pb")
+        });
         // auto-switch Apply records the profile it left
         svc.apply(&SwitchTarget { profile_id: "pa".into(), page_id: None, rule_id: None }, None);
         assert_eq!(state.active_profile_id(), "pa");
