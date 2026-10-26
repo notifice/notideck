@@ -1,0 +1,13 @@
+[package]
+name = "nd-plugin-sdk"
+description = "Rust SDK for writing Notideck plugins (docs/PLUGINS.md)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["rt", "macros", "sync", "time", "net"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+tokio-tungstenite = { version = "0.24", default-features = false, features = ["connect"] }

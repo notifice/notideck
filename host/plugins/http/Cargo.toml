@@ -1,0 +1,17 @@
+[package]
+name = "notideck-plugin-http"
+description = "Notideck sample plugin: send an HTTP request from a key"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "http"
+path = "src/main.rs"
+
+[dependencies]
+nd-plugin-sdk = { path = "../../crates/nd-plugin-sdk" }
+tokio = { workspace = true, features = ["rt", "macros", "time", "sync"] }
+serde_json.workspace = true
+ureq = { version = "2", default-features = false, features = ["tls"] }

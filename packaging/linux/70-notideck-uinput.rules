@@ -1,0 +1,3 @@
+# Allow the active desktop user to create virtual input devices (Notideck keyboard injection).
+# Install to /etc/udev/rules.d/ then: sudo udevadm control --reload && sudo udevadm trigger
+KERNEL=="uinput", SUBSYSTEM=="misc", TAG+="uaccess", OPTIONS+="static_node=uinput", MODE="0660", GROUP="input"

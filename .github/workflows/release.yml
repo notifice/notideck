@@ -1,0 +1,83 @@
+name: Release
+# Push a tag like v0.2.0 (it must match the version in host/Cargo.toml) to build every package
+# and publish them on a GitHub Release. Can also be started by hand from the Actions tab.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: ver
+        run: |
+          v="$(sed -n '/^\[workspace.package\]/,/^\[/{s/^version *= *"\(.*\)"/\1/p}' host/Cargo.toml | head -1)"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if [ "${GITHUB_REF_TYPE}" = tag ] && [ "${GITHUB_REF_NAME}" != "v$v" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match host/Cargo.toml version $v"; exit 1
+          fi
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mingw-w64 nsis zip pkg-config \
+            libudev-dev libdbus-1-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: host
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Optional: a fixed signing key, so a new APK installs over the previous one.
+      # Secret ANDROID_DEBUG_KEYSTORE = base64 of ~/.android/debug.keystore. Without it each
+      # run signs with a fresh key and phones must uninstall the old app first.
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            mkdir -p ~/.android
+            echo "$KEYSTORE_B64" | base64 -d > ~/.android/debug.keystore
+          else
+            echo "::warning::ANDROID_DEBUG_KEYSTORE not set; the APK is signed with a throwaway key"
+          fi
+
+      - name: Build packages
+        run: |
+          chmod +x android/gradlew scripts/*.sh
+          scripts/release.sh --skip-checks
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: Notideck ${{ steps.ver.outputs.version }}
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
+          generate_release_notes: true
+          body: |
+            > **Made with AI.** This project was written almost entirely by an AI model (Anthropic's Claude, through
+            > Claude Code) and has not been reviewed by a professional software engineer. Use it at your own risk.
+            > Details in the [README](https://github.com/notifice/notideck#readme).
+
+            Check downloads against `SHA256SUMS`. See [CHANGELOG.md](https://github.com/notifice/notideck/blob/main/CHANGELOG.md) for what changed.
+          files: |
+            dist/Notideck-*-windows-x64-setup.exe
+            dist/Notideck-*-windows-x64.zip
+            dist/Notideck-*-linux-x86_64.tar.gz
+            dist/Notideck-*-x86_64.AppImage
+            dist/Notideck-*-phone.apk
+            dist/SHA256SUMS

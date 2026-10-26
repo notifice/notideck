@@ -1,0 +1,12 @@
+[Unit]
+Description=Notideck host agent
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/notideck --headless
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

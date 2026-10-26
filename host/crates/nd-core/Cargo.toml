@@ -1,0 +1,18 @@
+[package]
+name = "nd-core"
+description = "Notideck core logic: profiles, pages, action router, session state"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nd-platform.workspace = true
+nd-proto.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+hex = "0.4"
+thiserror.workspace = true
+tracing.workspace = true
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+regex = { version = "1.13", default-features = false, features = ["std", "unicode-case", "unicode-perl"] }

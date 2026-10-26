@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Notideck
+Comment=Turn a phone into a Stream Deck-style controller
+Exec=notideck --open
+Icon=notideck
+Terminal=false
+Categories=Utility;
+StartupWMClass=notideck

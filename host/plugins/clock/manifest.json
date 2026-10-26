@@ -1,0 +1,110 @@
+{
+  "version": "1.0.0",
+  "author": "Notideck",
+  "protocol": 1,
+  "icon": "icons/plugin.svg",
+  "id": "dev.notideck.clock",
+  "name": "Clock & Timer",
+  "description": "Live clock, countdown timer and stopwatch keys.",
+  "entry": {
+    "windows": "clock.exe",
+    "linux": "clock"
+  },
+  "permissions": [],
+  "actions": [
+    {
+      "id": "clock",
+      "name": "Clock",
+      "description": "Shows the current time.",
+      "icon": "icons/clock.svg",
+      "controls": [
+        "key",
+        "tile"
+      ],
+      "triggers": [
+        "key_down"
+      ],
+      "settings": [
+        {
+          "key": "format",
+          "label": "Format",
+          "type": "select",
+          "default": "24h",
+          "options": [
+            {
+              "value": "24h",
+              "label": "24-hour"
+            },
+            {
+              "value": "12h",
+              "label": "12-hour (AM/PM)"
+            }
+          ]
+        },
+        {
+          "key": "seconds",
+          "label": "Show seconds",
+          "type": "toggle",
+          "default": false
+        },
+        {
+          "key": "date",
+          "label": "Show date",
+          "type": "toggle",
+          "default": false,
+          "help": "Shown as the subtitle."
+        }
+      ]
+    },
+    {
+      "id": "timer",
+      "name": "Countdown timer",
+      "description": "Tap to start or pause, long-press to reset. Turn a dial to change the minutes.",
+      "icon": "icons/timer.svg",
+      "controls": [
+        "key",
+        "dial"
+      ],
+      "triggers": [
+        "key_down",
+        "long_press",
+        "dial_rotate",
+        "dial_press"
+      ],
+      "settings": [
+        {
+          "key": "minutes",
+          "label": "Minutes",
+          "type": "number",
+          "min": 0,
+          "max": 600,
+          "step": 1,
+          "default": 5
+        },
+        {
+          "key": "seconds",
+          "label": "Seconds",
+          "type": "number",
+          "min": 0,
+          "max": 59,
+          "step": 1,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "id": "stopwatch",
+      "name": "Stopwatch",
+      "description": "Tap to start or stop, long-press to reset.",
+      "icon": "icons/stopwatch.svg",
+      "controls": [
+        "key"
+      ],
+      "triggers": [
+        "key_down",
+        "long_press"
+      ],
+      "settings": []
+    }
+  ]
+}

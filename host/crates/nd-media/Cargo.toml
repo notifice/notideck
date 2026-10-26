@@ -1,0 +1,31 @@
+[package]
+name = "nd-media"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nd-proto.workspace = true
+thiserror.workspace = true
+bytes.workspace = true
+tracing.workspace = true
+
+[features]
+# OpenH264 decoder backend. Always compiled on non-Windows targets (see below); opt-in on Windows
+# (`--features openh264`) as a fallback when the OS has no H.264 MFT.
+openh264 = ["dep:openh264"]
+
+[target.'cfg(not(windows))'.dependencies]
+openh264 = { version = "0.9", default-features = false, features = ["source"] }
+
+[target.'cfg(windows)'.dependencies]
+openh264 = { version = "0.9", default-features = false, features = ["source"], optional = true }
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+] }
+
+[dev-dependencies]
+openh264 = { version = "0.9", default-features = false, features = ["source"] }

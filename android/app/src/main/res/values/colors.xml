@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="nd_base">#000000</color>
+    <color name="nd_panel">#0E0F11</color>
+    <color name="nd_accent">#A8C478</color>
+</resources>

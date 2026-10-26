@@ -1,0 +1,18 @@
+[package]
+name = "nd-obs"
+description = "Notideck OBS Studio integration: obs-websocket v5 client, settings detection, fake server for tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nd-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+base64.workspace = true
+sha2.workspace = true
+rand.workspace = true
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+tokio-tungstenite = { version = "0.24", default-features = false, features = ["connect"] }

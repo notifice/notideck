@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Version numbers come from build.rs (-D defines via a generated include).
+#include "version.h"
+
+1 ICON "notideck.ico"
+1 24 "notideck.manifest"
+
+1 VERSIONINFO
+FILEVERSION ND_VER_COMMA
+PRODUCTVERSION ND_VER_COMMA
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "Notideck"
+      VALUE "FileDescription", "Notideck"
+      VALUE "FileVersion", ND_VER_STR
+      VALUE "InternalName", "Notideck"
+      VALUE "LegalCopyright", "GPL-3.0-or-later"
+      VALUE "OriginalFilename", "Notideck.exe"
+      VALUE "ProductName", "Notideck"
+      VALUE "ProductVersion", ND_VER_STR
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 0x4B0
+  END
+END

@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "author": "Notideck",
+  "protocol": 1,
+  "icon": "icons/plugin.svg",
+  "id": "dev.notideck.weather",
+  "name": "Weather",
+  "description": "Current temperature and conditions from Open-Meteo.",
+  "entry": {
+    "windows": "weather.exe",
+    "linux": "weather"
+  },
+  "permissions": [
+    "network"
+  ],
+  "actions": [
+    {
+      "id": "current",
+      "name": "Current weather",
+      "description": "Temperature, place and conditions. Tap to refresh.",
+      "icon": "icons/current.svg",
+      "controls": [
+        "key",
+        "tile"
+      ],
+      "triggers": [
+        "key_down"
+      ],
+      "settings": [
+        {
+          "key": "city",
+          "label": "City",
+          "type": "text",
+          "placeholder": "Istanbul"
+        },
+        {
+          "key": "units",
+          "label": "Units",
+          "type": "select",
+          "default": "celsius",
+          "options": [
+            {
+              "value": "celsius",
+              "label": "Celsius"
+            },
+            {
+              "value": "fahrenheit",
+              "label": "Fahrenheit"
+            }
+          ]
+        },
+        {
+          "key": "refresh",
+          "label": "Refresh (minutes)",
+          "type": "number",
+          "min": 1,
+          "max": 1440,
+          "step": 1,
+          "default": 15
+        }
+      ]
+    }
+  ]
+}

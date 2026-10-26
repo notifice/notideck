@@ -1,0 +1,28 @@
+[package]
+name = "nd-fakephone"
+description = "Notideck fake phone test client and mock host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nd-proto.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+prost.workspace = true
+bytes.workspace = true
+uuid.workspace = true
+nd-transport.workspace = true
+rustls.workspace = true
+tokio-rustls.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+openh264 = { version = "0.9.8", optional = true }
+
+[dev-dependencies]
+tracing-subscriber.workspace = true
+
+[features]
+default = ["camera"]
+camera = ["dep:openh264"]

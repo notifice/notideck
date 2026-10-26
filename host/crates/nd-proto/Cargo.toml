@@ -1,0 +1,19 @@
+[package]
+name = "nd-proto"
+description = "Notideck protocol: generated protobuf types and framing codecs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+prost.workspace = true
+bytes.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-util"] }
+
+[build-dependencies]
+prost-build.workspace = true
+protoc-bin-vendored.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true

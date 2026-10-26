@@ -1,0 +1,66 @@
+{
+  "comment": "Pairing test vectors (ADR 0004 §4). proof = HMAC-SHA256(secret, 'notideck-pair-v1' || SHA256(client_cert_der) || SHA256(host_cert_der)). Cert DER bytes here are arbitrary, not real certificates. Both nd-transport and the Android app test against this file.",
+  "proofs": [
+    {
+      "secret_b64url": "AAECAwQFBgcICQoLDA0ODw",
+      "client_cert_der_hex": "636c69656e742d636572742d6465722d31636c69656e742d636572742d6465722d31636c69656e742d636572742d6465722d31",
+      "host_cert_der_hex": "686f73742d636572742d6465722d31686f73742d636572742d6465722d31686f73742d636572742d6465722d31",
+      "client_fp_hex": "d7b84550c3a54243cc79c767b31549904e466d58862b7f53b8817c6ff9e51a64",
+      "host_fp_hex": "2c9a77adec7cdbc5d1d55ab9ccaf4c7c0d238a59e95f6591a264f3d0e6279980",
+      "proof_hex": "86e4adc909b4f393cff633f65586acce782d74fe0407505d9a5e3a7240674b01"
+    },
+    {
+      "secret_b64url": "_____________________w",
+      "client_cert_der_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+      "host_cert_der_hex": "fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0efeeedecebeae9e8e7e6e5e4e3e2e1e0dfdedddcdbdad9d8d7d6d5d4d3d2d1d0cfcecdcccbcac9c8c7c6c5c4c3c2c1c0bfbebdbcbbbab9b8b7b6b5b4b3b2b1b0afaeadacabaaa9a8a7a6a5a4a3a2a1a09f9e9d9c9b9a999897969594939291908f8e8d8c8b8a898887868584838281807f7e7d7c7b7a797877767574737271706f6e6d6c6b6a696867666564636261605f5e5d5c5b5a595857565554535251504f4e4d4c4b4a494847464544434241403f3e3d3c3b3a393837363534333231302f2e2d2c2b2a292827262524232221201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100",
+      "client_fp_hex": "1901da1c9f699b48f6b2636e65cbf73abf99d0441ef67f5c540a42f7051dec6f",
+      "host_fp_hex": "cd6816b77f68d70001fc3eaa4d42bdd67cb5973b3151cc5292ecc02a3daac6ab",
+      "proof_hex": "dbe0f829bfa5af23f77d799a3c49096c6b9f10638af1c89c88f55e1d325abb28"
+    },
+    {
+      "secret_b64url": "nzwaC34tRKHA_-4SNFZ4kA",
+      "client_cert_der_hex": "3082010a",
+      "host_cert_der_hex": "3082020b",
+      "client_fp_hex": "3adde01b2de54e88794048d551bb986bc1b2b85dd0101e8081e709c4a6ab57ed",
+      "host_fp_hex": "4b599429dd7042191f3a29c20ba8804b2853ec718e07a1831b701443eb07b172",
+      "proof_hex": "4f76dd6cd6dc0df2fa99b6eb54bf53006ba0946ebf1fd5db5b2d9487b277b384"
+    }
+  ],
+  "uris": [
+    {
+      "uri": "notideck://pair?v=1&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=192.168.1.20&p=47800&f=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&s=AAECAwQFBgcICQoLDA0ODw&e=1791820800",
+      "host_id": "0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11",
+      "host_name": "DESKTOP-ALEX",
+      "addrs": [
+        "192.168.1.20"
+      ],
+      "port": 47800,
+      "host_fp_hex": "2c9a77adec7cdbc5d1d55ab9ccaf4c7c0d238a59e95f6591a264f3d0e6279980",
+      "secret_b64url": "AAECAwQFBgcICQoLDA0ODw",
+      "expires_at": 1791820800
+    },
+    {
+      "uri": "notideck://pair?v=1&h=7d3c2b1a-0000-4000-8000-000000000001&n=Alex%27s%20PC%20%26%20Co.%20%E2%80%94%20B%C3%BCro&a=192.168.1.20,10.0.0.5,fe80%3A%3A1&p=47999&f=zWgWt39o1wAB_D6qTUK91ny1lzsxUcxSkuzAKj2qxqs&s=_____________________w&e=1791820999",
+      "host_id": "7d3c2b1a-0000-4000-8000-000000000001",
+      "host_name": "Alex's PC & Co. — Büro",
+      "addrs": [
+        "192.168.1.20",
+        "10.0.0.5",
+        "fe80::1"
+      ],
+      "port": 47999,
+      "host_fp_hex": "cd6816b77f68d70001fc3eaa4d42bdd67cb5973b3151cc5292ecc02a3daac6ab",
+      "secret_b64url": "_____________________w",
+      "expires_at": 1791820999
+    }
+  ],
+  "invalid_uris": [
+    "https://pair?v=1",
+    "notideck://pair?v=2&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=192.168.1.20&p=47800&f=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&s=AAECAwQFBgcICQoLDA0ODw&e=1791820800",
+    "notideck://pair?v=1&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=192.168.1.20&p=47800&f=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&e=1791820800",
+    "notideck://pair?v=1&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=192.168.1.20&p=47800&f=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&s=AAAAAAAAAAAAAAAAAAAA&e=1791820800",
+    "notideck://pair?v=1&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=192.168.1.20&p=99999&f=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&s=AAECAwQFBgcICQoLDA0ODw&e=1791820800",
+    "notideck://pair?v=1&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=999.1.1.1&p=47800&f=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&s=AAECAwQFBgcICQoLDA0ODw&e=1791820800",
+    "notideck://pair?v=1&h=0b9f4f6e-3c1d-4b8a-9a57-2f1e6c0d9a11&n=DESKTOP-ALEX&a=192.168.1.20&p=47800&f=AAAA&x=LJp3rex828XR1Vq5zK9MfA0jilnpX2WRomTz0OYnmYA&s=AAECAwQFBgcICQoLDA0ODw&e=1791820800"
+  ]
+}

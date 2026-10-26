@@ -1,0 +1,73 @@
+Notideck Linux packaging
+========================
+
+Three ways to get Notideck on Linux (x86_64). Release artifacts are built by
+`scripts/build-linux.sh` into dist/ (--no-appimage skips the AppImage; --refresh-adb
+re-downloads the bundled adb). Downloads are cached in packaging/linux/vendor/ (git-ignored).
+
+1. AppImage  (dist/Notideck-<ver>-x86_64.AppImage)
+     chmod +x Notideck-*.AppImage && ./Notideck-*.AppImage
+   Starts the agent and opens the config page in the browser. Arguments are passed to the
+   agent (./Notideck-*.AppImage --help). Without FUSE: --appimage-extract-and-run.
+   adb and the bundled plugins are inside the image.
+
+2. Tarball + install.sh  (dist/Notideck-<ver>-linux-x86_64.tar.gz)
+     tar xzf Notideck-*-linux-x86_64.tar.gz && cd Notideck-*-linux-x86_64 && ./install.sh
+   Per-user into ~/.local by default; --system for /usr/local (sudo); --prefix DIR; --yes;
+   --with-udev; --with-service. It installs the binary (notideck), adb, plugins
+   (<prefix>/lib/notideck/plugins), the desktop entry (Exec=<prefix>/bin/notideck --open) and
+   icon, and records every file in <prefix>/share/notideck/installed-files.
+   Remove: <prefix>/share/notideck/uninstall.sh [--purge].
+
+3. From source
+     cd host && cargo build --release -p nd-agent --features nd-agent/linux-gui   # window + tray
+     (omit --features for a headless agent that needs no GTK)
+     install -Dm755 host/target/release/nd-agent ~/.local/bin/notideck
+     scripts/stage-plugins.sh --release /tmp/nd-plugins
+     mkdir -p ~/.local/lib/notideck && cp -r /tmp/nd-plugins ~/.local/lib/notideck/plugins
+     install -Dm644 packaging/linux/notideck.desktop ~/.local/share/applications/notideck.desktop
+     install -Dm644 packaging/linux/notideck.png ~/.local/share/icons/hicolor/256x256/apps/notideck.png
+   adb must be next to the binary or on PATH (android-tools-adb / platform-tools).
+   For development, scripts/stage-plugins.sh host/target/plugins-staged is picked up automatically.
+   NOTIDECK_PLUGINS_DIR overrides the bundled plugin directory.
+
+Keyboard access (hotkeys / typing need /dev/uinput)
+   Easiest: Notideck > Settings > Keyboard access > "Fix keyboard access" (asks for your
+   password via pkexec, installs the udev rule and reloads udev). Or install.sh --with-udev.
+   Manual fallback:
+     sudo cp packaging/linux/70-notideck-uinput.rules /etc/udev/rules.d/
+     sudo udevadm control --reload && sudo udevadm trigger
+     sudo usermod -aG input "$USER"      # then log out and back in
+   If /dev/uinput is missing: sudo modprobe uinput (add "uinput" to /etc/modules-load.d/ to persist).
+   Without access the agent falls back to a dummy keyboard and hotkeys do nothing.
+
+Webcam (Linux v4l2loopback device "Notideck Camera")
+   Needs the v4l2loopback kernel module for the running kernel: Arch/CachyOS and Debian/Ubuntu
+   `v4l2loopback-dkms` (or your kernel's own module package), Fedora `v4l2loopback` from RPM Fusion.
+   Easiest: Notideck > Camera > "Set up webcam" (asks for your password via pkexec), or
+   install.sh --with-webcam, or `sudo notideck --install-vcam`. Remove: Settings > Webcam device >
+   Uninstall, or `sudo notideck --uninstall-vcam`, or uninstall.sh.
+   By hand:
+     echo 'options v4l2loopback exclusive_caps=1 card_label="Notideck Camera"' | sudo tee /etc/modprobe.d/notideck-v4l2loopback.conf
+     echo v4l2loopback | sudo tee /etc/modules-load.d/notideck-v4l2loopback.conf
+     sudo modprobe v4l2loopback exclusive_caps=1 card_label="Notideck Camera"
+   Then pick "Notideck Camera" in Zoom, Discord, OBS or the browser. While no app uses it (or the
+   phone is not connected) it shows a "phone not connected" picture so apps keep the selection.
+
+systemd user service (start at login)
+     install -Dm644 packaging/linux/notideck-agent.service ~/.config/systemd/user/notideck-agent.service
+     systemctl --user daemon-reload && systemctl --user enable --now notideck-agent
+     journalctl --user -u notideck-agent -f
+   (ExecStart is %h/.local/bin/notideck --headless; install.sh rewrites it to the real prefix.)
+
+Build notes
+   appimagetool is pinned to release 1.9.1 (github.com/AppImage/appimagetool) and run with
+   --appimage-extract-and-run, so FUSE is not needed to build (works in WSL).
+   The release is built with `--features nd-agent/linux-gui` (native window + tray). Build deps:
+   webkit2gtk-4.1, gtk3 and libayatana-appindicator dev packages (Debian/Ubuntu:
+   libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev; Arch: webkit2gtk-4.1 gtk3
+   libayatana-appindicator).
+   Runtime deps: the matching shared libraries (libwebkit2gtk-4.1, libgtk-3, libayatana-appindicator3)
+   plus a system tray host (StatusNotifier; GNOME needs the AppIndicator extension). The AppImage
+   does not bundle them. Without WAYLAND_DISPLAY/DISPLAY, or with --headless, the agent runs
+   headless and uses the browser UI.

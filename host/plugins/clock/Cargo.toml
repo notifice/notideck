@@ -1,0 +1,17 @@
+[package]
+name = "notideck-plugin-clock"
+description = "Notideck sample plugin: clock, countdown timer and stopwatch"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "clock"
+path = "src/main.rs"
+
+[dependencies]
+nd-plugin-sdk = { path = "../../crates/nd-plugin-sdk" }
+tokio = { workspace = true, features = ["rt", "macros", "time", "signal"] }
+serde_json.workspace = true
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

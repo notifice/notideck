@@ -1,0 +1,67 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Notideck</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23181B1F'/%3E%3Crect x='3' y='3' width='4' height='4' rx='1' fill='%23A8C478'/%3E%3Crect x='9' y='3' width='4' height='4' rx='1' fill='%239AA1AB'/%3E%3Crect x='3' y='9' width='4' height='4' rx='1' fill='%239AA1AB'/%3E%3Crect x='9' y='9' width='4' height='4' rx='1' fill='%239AA1AB'/%3E%3C/svg%3E">
+<script src="/js/theme-boot.js"></script>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="app">
+  <nav class="rail" aria-label="Main">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2" class="m-acc"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+      <span>Notideck</span>
+    </div>
+    <ul class="navlist" id="nav"></ul>
+    <div class="conn" id="conn" aria-live="polite"></div>
+  </nav>
+
+  <div class="content" id="main" tabindex="-1">
+    <div class="problems" id="problems" role="region" aria-label="Problems"></div>
+
+    <section class="view" id="view-deck" aria-label="Deck" hidden>
+      <div class="deck">
+        <div class="toolbar" id="toolbar"></div>
+        <div class="deck-body">
+          <section class="stage" aria-label="Deck editor">
+            <div class="stage-head">
+              <nav class="pages" id="tabs" aria-label="Pages"></nav>
+            </div>
+            <div class="phone-wrap">
+              <div class="phone" id="phone">
+                <div class="phone-screen">
+                  <div class="siderail" id="siderail" aria-label="Side rail" hidden></div>
+                  <div class="grid" id="grid" role="grid" aria-label="Deck grid. Arrow keys move selection, Alt plus arrows move the control."></div>
+                </div>
+                <span class="cam" aria-hidden="true"></span>
+              </div>
+            </div>
+            <p class="hint"><kbd>Arrows</kbd> select <kbd>Alt + arrows</kbd> move <kbd>Enter</kbd> edit <kbd>Del</kbd> remove <kbd>Drag</kbd> relocate</p>
+          </section>
+          <aside class="inspector" id="inspector" aria-label="Inspector"></aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="view page-view" id="view-devices" aria-label="Devices" hidden></section>
+    <section class="view page-view" id="view-camera" aria-label="Camera" hidden></section>
+    <section class="view page-view" id="view-mic" aria-label="Microphone" hidden></section>
+    <section class="view page-view" id="view-mixer" aria-label="Mixer" hidden></section>
+    <section class="view page-view" id="view-obs" aria-label="OBS" hidden></section>
+    <section class="view page-view" id="view-autoswitch" aria-label="Auto-switch" hidden></section>
+    <section class="view page-view" id="view-plugins" aria-label="Plugins" hidden></section>
+    <section class="view page-view" id="view-settings" aria-label="Settings" hidden></section>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

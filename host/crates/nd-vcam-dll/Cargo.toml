@@ -1,0 +1,38 @@
+[package]
+name = "nd-vcam-dll"
+description = "Notideck Camera: Media Foundation virtual camera media source (Windows 11), loaded by the Frame Server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "notideck_vcam"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nd-vcam.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-core = "0.58"
+windows = { version = "0.58", features = [
+    "implement",
+    "Win32_Foundation",
+    "Win32_Media_KernelStreaming",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Variant",
+] }
+
+[target.'cfg(windows)'.dev-dependencies]
+windows-core = "0.58"
+windows = { version = "0.58", features = [
+    "implement",
+    "Win32_Foundation",
+    "Win32_Media_KernelStreaming",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_System_Variant",
+] }

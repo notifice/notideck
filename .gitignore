@@ -1,0 +1,25 @@
+# Dependencies / build artifacts
+.tools/
+target/
+.gradle/
+**/build/
+local.properties
+*.apk
+*.aab
+*.iml
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Local tooling / scratch
+screen_test.png
+.claude/
+
+dist/
+packaging/windows/vendor/
+packaging/linux/vendor/
+
+# Windows packaging
+__pycache__/
+*.pyc

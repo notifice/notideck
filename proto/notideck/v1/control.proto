@@ -1,0 +1,586 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Notideck control channel protocol. See docs/SPEC.md §5.
+// Framing on the wire: u32 big-endian length, then one serialized Envelope.
+// The phone is always the TCP client; the host is the source of truth.
+
+syntax = "proto3";
+
+package notideck.v1;
+
+option java_package = "dev.notideck.proto.v1";
+
+// Current protocol version. Kept as a constant here for documentation; code defines it
+// explicitly. v2 (ADR 0004): the control connection is mutually authenticated TLS 1.3 and the
+// host only accepts PROTO_VERSION exactly. A plaintext v1 phone gets a Goodbye
+// (VERSION_MISMATCH) in plaintext framing and is closed.
+// PROTO_VERSION = 2
+
+message Envelope {
+  uint32 seq = 1;
+  oneof msg {
+    Hello          hello           = 10;
+    Welcome        welcome         = 11;
+    SetLayout      set_layout      = 20;
+    UpdateControls update_controls = 21;
+    PutIcon        put_icon        = 22;
+    NeedIcon       need_icon       = 23;
+    InputEvent     input           = 30;
+    Feedback       feedback        = 31;
+    Appearance     appearance      = 32;
+    NavRequest     nav_request     = 33;
+    NavState       nav_state       = 34;
+    SetRail        set_rail        = 35;
+    PlayStream     play_stream     = 36;
+    PlayerClosed   player_closed   = 37;
+    CameraStart    camera_start    = 40;
+    CameraStop     camera_stop     = 41;
+    CameraControl  camera_control  = 42;
+    CameraStatus   camera_status   = 43;
+    MediaAttach    media_attach    = 44;
+    MediaAttached  media_attached  = 45;
+    CameraReadout  camera_readout  = 46;
+    MicStart       mic_start       = 47;
+    MicStop        mic_stop        = 48;
+    MicStatus      mic_status      = 49;
+    DeviceHealth   health          = 50;
+    Goodbye        goodbye         = 60;
+    PairRequest    pair_request    = 70;
+    PairResult     pair_result     = 71;
+    PairingPending pairing_pending = 72;
+    Ping           ping            = 90;
+    Pong           pong            = 91;
+  }
+}
+
+// ---------------------------------------------------------------- handshake
+
+enum Capability {
+  CAPABILITY_UNSPECIFIED = 0;
+  CAPABILITY_CAMERA      = 1;
+  CAPABILITY_HAPTICS     = 2;
+  CAPABILITY_TORCH       = 3;
+  CAPABILITY_PLAYER      = 4;  // round 20: understands PlayStream (built-in HLS player)
+  CAPABILITY_MIC         = 5;  // round 25: understands MicStart/MicStop, sends MicStatus
+}
+
+// phone -> host, first message on the control connection.
+message Hello {
+  uint32 proto_version = 1;
+  string device_id     = 2;  // stable random id generated on first launch
+  string device_model  = 3;  // Build.MANUFACTURER + " " + Build.MODEL
+  uint32 android_sdk   = 4;
+  string app_version   = 5;
+  ScreenInfo screen    = 6;
+  repeated Capability capabilities = 7;
+  // v2: lowercase hex SHA-256 of the phone's TLS client cert (DER). Informational only;
+  // the host takes the identity from the TLS layer and ignores a mismatch except for logging.
+  string cert_fp       = 8;
+  // v2: user-visible phone name for the PC's device list (default: device_model).
+  string device_name   = 9;
+}
+
+message ScreenInfo {
+  uint32 width_px  = 1;
+  uint32 height_px = 2;
+  uint32 dpi       = 3;
+}
+
+// host -> phone, reply to Hello.
+message Welcome {
+  string session_id     = 1;
+  string host_name      = 2;
+  uint32 proto_version  = 3;  // version the host will speak
+  // v2: stable host id (UUID, same as `h` in the pairing URI). The phone stores it with the
+  // TLS server cert fingerprint it saw (trust on first use over USB, pinned `f` over QR).
+  string host_id        = 4;
+}
+
+enum GoodbyeReason {
+  GOODBYE_REASON_UNSPECIFIED      = 0;
+  GOODBYE_REASON_SHUTDOWN         = 1;
+  GOODBYE_REASON_SUPERSEDED       = 2;  // a USB session replaced this LAN session
+  GOODBYE_REASON_VERSION_MISMATCH = 3;
+  GOODBYE_REASON_UNAUTHORIZED     = 4;  // unknown cert on LAN without a valid PairRequest
+  GOODBYE_REASON_UNPAIRED         = 5;  // phone sent Hello but never paired / pairing timed out
+  GOODBYE_REASON_REVOKED          = 6;  // the user removed this phone on the PC
+  GOODBYE_REASON_PAIRING_DENIED   = 7;  // the user pressed Deny on a pending USB phone
+}
+
+// either direction, sent right before closing.
+message Goodbye {
+  GoodbyeReason reason = 1;
+  string message       = 2;
+}
+
+// ------------------------------------------------------------------ pairing (v2, ADR 0004)
+//
+// After Hello the host looks up the TLS client cert fingerprint:
+//   * paired              -> Welcome, normal session.
+//   * unknown, loopback   -> PairingPending, then Welcome after the user presses Allow on the PC,
+//                            or Goodbye(PAIRING_DENIED). A valid PairRequest also completes it.
+//   * unknown, LAN        -> no Welcome; the phone must send PairRequest within 30 s.
+//                            ok  -> PairResult{ok}, then Welcome on the same connection.
+//                            bad -> PairResult{ok=false}, Goodbye(UNAUTHORIZED), close.
+// The host sends nothing but Ping/Pong/Goodbye/PairingPending/PairResult before Welcome and
+// ignores every other phone message until then.
+
+// phone -> host, right after Hello when pairing from a QR code.
+message PairRequest {
+  // HMAC-SHA256(key = secret, msg = "notideck-pair-v1" || client_fp || host_fp), 32 bytes.
+  // secret = the 16 raw bytes of `s` in the URI; *_fp = 32 raw bytes of SHA-256(cert DER).
+  bytes  proof       = 1;
+  string device_name = 2;
+}
+
+// host -> phone, answer to PairRequest.
+message PairResult {
+  bool   ok        = 1;
+  string error     = 2;  // human readable when !ok ("code expired", "code already used", ...)
+  string host_id   = 3;
+  string host_name = 4;
+}
+
+// host -> phone: unknown phone over USB, waiting for Allow on the PC.
+message PairingPending {
+  string host_name = 1;
+}
+
+// ------------------------------------------------------------------ layout
+
+enum ControlKind {
+  CONTROL_KIND_UNSPECIFIED = 0;
+  CONTROL_KIND_KEY         = 1;
+  CONTROL_KIND_DIAL        = 2;
+  CONTROL_KIND_SLIDER      = 3;
+  CONTROL_KIND_TILE        = 4;
+}
+
+message Control {
+  string id          = 1;  // unique within the page
+  ControlKind kind   = 2;
+  uint32 col         = 3;  // 0-based top-left cell
+  uint32 row         = 4;
+  uint32 span_w      = 5;  // 0 is treated as 1
+  uint32 span_h      = 6;  // 0 is treated as 1
+  string icon_hash   = 7;  // hex sha256 of icon bytes; empty = no icon
+  string title       = 8;
+  uint32 fg_argb     = 9;  // 0 = theme default
+  uint32 bg_argb     = 10; // 0 = theme default
+  uint32 state_index = 11; // multi-state keys
+  float  value       = 12; // dial/slider 0..1, tile gauge
+  bool   horizontal  = 13; // slider orientation
+  string subtitle    = 14; // tile secondary text
+  // Round 12 (M4 mixer), additive:
+  bool   meter       = 15; // draw a live level meter next to the value (slider/dial/tile/key)
+  float  level       = 16; // meter level 0..1 (peak, linear); the phone smooths the fall-off
+  bool   dimmed      = 17; // target unavailable (empty mixer slot, app not running): draw inactive, input still sent
+  // Round 16 (media page), additive:
+  ControlFace face   = 18; // how a tile draws its fields; DEFAULT for every other kind
+  string detail      = 19; // third text line (MEDIA face: elapsed / length, e.g. "1:23 / 3:45")
+}
+
+// Round 16. Older phones ignore `face` and draw a DEFAULT tile.
+enum ControlFace {
+  CONTROL_FACE_DEFAULT = 0;
+  // Now-playing tile: icon_hash = album art (square, left; a note glyph when empty), title = track,
+  // subtitle = artist, detail = times, value = progress (thin bar), state_index 1 = playing,
+  // dimmed = nothing playing. Taps send KEY_DOWN/KEY_UP like any tile.
+  // Round 17: a touch that starts on the progress bar band (bottom strip, at least 28 dp tall) sends
+  // no KEY_DOWN/UP; it scrubs locally and on release sends one SLIDER_VALUE with value = x fraction
+  // of the bar (0..1). Older hosts just store the value.
+  CONTROL_FACE_MEDIA   = 1;
+  // Round 20. Live-stream tile: icon_hash = still (full-bleed background, cropped, with a dark scrim for text;
+  // a plain accent-tinted tile when empty), title = channel name, subtitle = stream title / category,
+  // detail = viewer count text (e.g. "12.4K"), state_index 1 = live (a red LIVE tally pill top-left),
+  // 0 = offline or empty (still greyscale, no pill). dimmed as usual. Taps send KEY_DOWN/KEY_UP (long press etc.
+  // as for any tile). Older phones draw a DEFAULT tile.
+  CONTROL_FACE_STREAM  = 2;
+  // Round 28. Camera preview tile, handled on the phone: a tap toggles a live preview of the phone camera inside
+  // the tile, a long press opens it full screen. The phone sends no input for it. title = caption (optional).
+  // Older phones draw a DEFAULT tile.
+  CONTROL_FACE_CAMERA  = 3;
+}
+
+// host -> phone, replaces the whole visible page.
+message SetLayout {
+  string page_id  = 1;
+  uint32 cols     = 2;  // default 5
+  uint32 rows     = 3;  // default 3
+  repeated Control controls = 4;
+}
+
+// Partial update. Only fields named in `fields` are applied.
+message ControlPatch {
+  string id = 1;
+  repeated string fields = 2;  // proto field names of Control, e.g. "title", "value"
+  Control control = 3;
+}
+
+// host -> phone
+message UpdateControls {
+  string page_id = 1;
+  repeated ControlPatch patches = 2;
+}
+
+// host -> phone
+message PutIcon {
+  string hash      = 1;  // hex sha256 of data
+  string mime_type = 2;  // image/png or image/webp
+  bytes  data      = 3;
+}
+
+// phone -> host, icon cache miss.
+message NeedIcon {
+  repeated string hashes = 1;
+}
+
+// ------------------------------------------------------------------- input
+
+enum InputKind {
+  INPUT_KIND_UNSPECIFIED   = 0;
+  INPUT_KIND_KEY_DOWN      = 1;
+  INPUT_KIND_KEY_UP        = 2;
+  INPUT_KIND_LONG_PRESS    = 3;
+  INPUT_KIND_DOUBLE_TAP    = 4;
+  INPUT_KIND_DIAL_ROTATE   = 5;  // uses delta
+  INPUT_KIND_DIAL_PRESS    = 6;
+  INPUT_KIND_DIAL_RELEASE  = 7;
+  INPUT_KIND_SLIDER_VALUE  = 8;  // uses value
+  INPUT_KIND_TOUCH_START   = 9;
+  INPUT_KIND_TOUCH_END     = 10;
+}
+
+// phone -> host
+message InputEvent {
+  string page_id    = 1;
+  string control_id = 2;
+  InputKind kind    = 3;
+  sint32 delta      = 4;  // dial detents, + = clockwise
+  float  value      = 5;  // slider 0..1
+  uint64 phone_time_ms = 6;  // SystemClock.uptimeMillis at the touch, for latency harness
+}
+
+// ---------------------------------------------------------------- navigation rail (round 10)
+
+enum NavAction {
+  NAV_ACTION_UNSPECIFIED = 0;
+  NAV_ACTION_HOME        = 1;  // main profile, initial page; auto-switch keeps running. While paused: resume instead.
+  NAV_ACTION_HOME_PAUSE  = 2;  // main profile, initial page, and pause auto-switch (long-press on Home)
+  NAV_ACTION_BACK        = 3;  // close the open folder, else go to the profile's initial page
+  NAV_ACTION_RESUME      = 4;  // resume auto-switch (re-applies the focused app's profile)
+  NAV_ACTION_GO_TO_PAGE  = 5;  // top-level page `page_index` of the active profile (closes an open folder)
+}
+
+// phone -> host, from the built-in side rail.
+message NavRequest {
+  NavAction action     = 1;
+  uint32    page_index = 2;  // NAV_ACTION_GO_TO_PAGE only, 0-based
+}
+
+// host -> phone, after every SetLayout and whenever one of these values changes.
+// A host that never sends it leaves the rail showing Home only.
+message NavState {
+  bool   can_go_back        = 1;  // in a folder, or not on the profile's initial page
+  bool   auto_switch_paused = 2;
+  bool   on_home            = 3;  // showing the main profile's initial page
+  string profile_name       = 4;
+  uint32 page_index         = 5;  // 0-based index of the visible top-level page
+  uint32 page_count         = 6;  // top-level pages in the profile; 0 while a folder is open (dots hidden)
+}
+
+// host -> phone, the user's pinned global keys for the side rail (round 11). Sent after the first
+// SetLayout of a session and whenever the rail config changes; empty = none. Up to 3, KEY kind only.
+// Live patches use UpdateControls with page_id RAIL_PAGE_ID; presses use InputEvent with that page_id.
+// RAIL_PAGE_ID = "__rail"
+message SetRail {
+  repeated Control controls = 1;
+}
+
+enum FeedbackKind {
+  FEEDBACK_KIND_UNSPECIFIED = 0;
+  FEEDBACK_KIND_HAPTIC      = 1;
+  FEEDBACK_KIND_SHOW_OK     = 2;
+  FEEDBACK_KIND_SHOW_ALERT  = 3;
+  FEEDBACK_KIND_TOAST       = 4;
+}
+
+enum PhoneTheme {
+  PHONE_THEME_UNSPECIFIED = 0;  // phone keeps its last/default theme (black)
+  PHONE_THEME_BLACK       = 1;  // pure black background, best for AMOLED screens
+  PHONE_THEME_GRAPHITE    = 2;  // soft dark grey, matches the desktop app
+  PHONE_THEME_CREAM       = 3;  // light: warm cream, peach accent
+  PHONE_THEME_LAVENDER    = 4;  // light: pale lilac, lavender accent
+  PHONE_THEME_MINT        = 5;  // light: pale mint, mint accent
+  PHONE_THEME_DUSK        = 6;  // dark: soft plum, lilac accent
+  PHONE_THEME_TIDE        = 7;  // dark: slate blue, powder-blue accent
+}
+
+// host -> phone, sent after Welcome and whenever the user changes it. The phone stores it
+// so the connection screen uses it before the next session.
+message Appearance {
+  PhoneTheme theme = 1;
+  // Round 29, additive. Absent (older hosts) = sleep off.
+  DeckSleep sleep  = 2;
+}
+
+// Round 29: after `idle_s` without a touch the phone blacks out the deck and drops the backlight to minimum
+// (the app stays in the foreground: camera, mic and the session keep running). The first touch only wakes it.
+message DeckSleep {
+  bool   enabled            = 1;
+  uint32 idle_s             = 2;  // 0 = default 120; clamped 15..3600 on the phone
+  bool   wake_on_camera_mic = 3;  // CameraStart / MicStart from the host wake the deck
+  bool   show_clock         = 4;  // faint clock drifting on the black screen
+}
+
+// host -> phone (round 20). Play an HLS stream full screen in the phone's built-in player, over the deck.
+// Only sent to phones that advertise CAPABILITY_PLAYER. A new PlayStream replaces the current one; an empty
+// url closes the player. The phone fetches the stream itself over its own network. Back (or the close button)
+// returns to the deck; nothing is reported back to the host.
+message PlayStream {
+  string url        = 1;  // https HLS playlist (.m3u8); empty = stop and close the player
+  string title      = 2;  // e.g. channel name
+  string subtitle   = 3;  // e.g. stream title
+  uint32 max_height = 4;  // cap the video height (e.g. 480, 720); 0 = adaptive, no cap
+  // Round 21 (synced PC audio), additive:
+  bool   muted         = 5;  // play without sound (the PC plays the audio)
+  // 0 = no sync (play near the live edge as before). > 0 = keep the shown frame at host wall-clock time minus
+  // this many ms, measured with the stream's EXT-X-PROGRAM-DATE-TIME (algorithm in docs/PLAN.md round 21; the
+  // PC player runs the same one). Host wall clock on the phone = phone wall clock + offset learned from
+  // Pong.host_time_ms.
+  uint32 sync_delay_ms = 6;
+  string session_id    = 7;  // opaque; echoed in PlayerClosed
+}
+
+// phone -> host (round 21). The user closed the player (Back, the close button, or the app went to the
+// background). Not sent when the host replaced or stopped the stream itself.
+message PlayerClosed {
+  string session_id = 1;  // PlayStream.session_id of the stream that was showing
+}
+
+// host -> phone
+message Feedback {
+  FeedbackKind kind = 1;
+  string control_id = 2;  // for OK/ALERT flash; empty = whole screen
+  string text       = 3;  // toast text
+}
+
+// ------------------------------------------------------------------ camera
+
+enum Lens {
+  LENS_UNSPECIFIED = 0;
+  LENS_BACK        = 1;
+  LENS_FRONT       = 2;
+  LENS_EXTERNAL    = 3;
+}
+
+// host -> phone. Phone opens the media connection after receiving this.
+message CameraStart {
+  uint32 width       = 1;
+  uint32 height      = 2;
+  uint32 fps         = 3;
+  uint32 bitrate_bps = 4;
+  Lens   lens        = 5;
+  uint32 rotation_deg = 6;  // 0/90/180/270, 0 = auto
+  bool   mirror      = 7;
+  CameraImage image  = 8;   // image settings to apply from the first frame (unset = all automatic)
+}
+
+message CameraStop {}
+
+// host -> phone. Only set fields are applied (proto3 optional).
+message CameraControl {
+  optional float zoom_ratio       = 1;
+  optional bool  torch            = 2;
+  optional float focus_x          = 3;  // 0..1 normalized, both x and y required
+  optional float focus_y          = 4;
+  optional sint32 exposure_comp   = 5;  // EV index
+  optional Lens  lens             = 6;
+  bool request_keyframe           = 7;
+  // Replaces the whole image settings set (round 15). Unset = leave them as they are.
+  // When set, exposure_comp above is ignored (image.exposure_comp wins).
+  CameraImage image               = 8;
+}
+
+// ---- image settings (round 15). Host-owned and persisted; the phone clamps every value to the
+// active lens's LensCaps and silently ignores what the lens can't do.
+
+enum FocusMode {
+  FOCUS_MODE_UNSPECIFIED = 0;   // = CONTINUOUS
+  FOCUS_MODE_CONTINUOUS  = 1;   // CONTROL_AF_MODE_CONTINUOUS_VIDEO; tap-to-focus re-triggers it
+  FOCUS_MODE_LOCKED      = 2;   // CONTROL_AF_MODE_AUTO, one AF trigger when entered (and on tap), then holds
+  FOCUS_MODE_MANUAL      = 3;   // CONTROL_AF_MODE_OFF + LENS_FOCUS_DISTANCE from focus_permille
+}
+
+enum ExposureMode {
+  EXPOSURE_MODE_UNSPECIFIED = 0;  // = AUTO
+  EXPOSURE_MODE_AUTO        = 1;  // AE on, exposure_comp + ae_lock apply
+  EXPOSURE_MODE_MANUAL      = 2;  // AE off: iso + exposure_us, frame duration = 1/fps
+}
+
+// Values follow CaptureRequest.CONTROL_AWB_MODE_* order (AUTO = 1 there).
+enum WhiteBalance {
+  WHITE_BALANCE_UNSPECIFIED      = 0;  // = AUTO
+  WHITE_BALANCE_AUTO             = 1;
+  WHITE_BALANCE_INCANDESCENT     = 2;
+  WHITE_BALANCE_FLUORESCENT      = 3;
+  WHITE_BALANCE_WARM_FLUORESCENT = 4;
+  WHITE_BALANCE_DAYLIGHT         = 5;
+  WHITE_BALANCE_CLOUDY_DAYLIGHT  = 6;
+  WHITE_BALANCE_TWILIGHT         = 7;
+  WHITE_BALANCE_SHADE            = 8;
+}
+
+enum Antibanding {
+  ANTIBANDING_UNSPECIFIED = 0;  // = AUTO
+  ANTIBANDING_AUTO        = 1;
+  ANTIBANDING_OFF         = 2;
+  ANTIBANDING_50HZ        = 3;
+  ANTIBANDING_60HZ        = 4;
+}
+
+message CameraImage {
+  FocusMode    focus_mode     = 1;
+  uint32       focus_permille = 2;   // MANUAL: 0 = infinity .. 1000 = closest (LENS_INFO_MINIMUM_FOCUS_DISTANCE)
+  ExposureMode exposure_mode  = 3;
+  sint32       exposure_comp  = 4;   // AUTO: EV index (steps of LensCaps.ev_step)
+  bool         ae_lock        = 5;   // AUTO only
+  uint32       iso            = 6;   // MANUAL: SENSOR_SENSITIVITY; 0 = keep the last auto value
+  uint32       exposure_us    = 7;   // MANUAL: SENSOR_EXPOSURE_TIME in µs, capped at 1/fps; 0 = keep last auto value
+  WhiteBalance white_balance  = 8;
+  bool         awb_lock       = 9;   // only with WHITE_BALANCE_AUTO
+  Antibanding  antibanding    = 10;
+  bool         stabilization  = 11;  // CONTROL_VIDEO_STABILIZATION_MODE_ON
+}
+
+// What one lens supports. Sent in CameraStatus.lens_caps (static per phone).
+message LensCaps {
+  Lens   lens               = 1;
+  bool   focus_manual       = 2;   // AF_MODE_OFF available and minimum focus distance > 0
+  bool   focus_lock         = 3;   // AF_MODE_AUTO available
+  bool   exposure_manual    = 4;   // REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR
+  uint32 iso_min            = 5;
+  uint32 iso_max            = 6;
+  uint32 exposure_us_min    = 7;
+  uint32 exposure_us_max    = 8;   // sensor max, before the 1/fps cap
+  sint32 ev_min             = 9;
+  sint32 ev_max             = 10;
+  float  ev_step            = 11;  // EV per index, e.g. 0.333
+  bool   ae_lock            = 12;
+  bool   awb_lock           = 13;
+  repeated WhiteBalance white_balances = 14;
+  repeated Antibanding  antibandings   = 15;
+  bool   stabilization      = 16;
+  float  zoom_max           = 17;
+}
+
+// phone -> host, about once a second while streaming: what the camera is doing right now
+// (from the latest CaptureResult). The host shows it and seeds manual values from it.
+message CameraReadout {
+  uint32 iso            = 1;
+  uint32 exposure_us    = 2;
+  uint32 focus_permille = 3;   // same scale as CameraImage.focus_permille; 0 if unknown
+  bool   focused        = 4;   // AF state is FOCUSED_LOCKED / PASSIVE_FOCUSED
+}
+
+message CameraMode {
+  Lens   lens   = 1;
+  uint32 width  = 2;
+  uint32 height = 3;
+  repeated uint32 fps = 4;
+}
+
+enum CameraState {
+  CAMERA_STATE_UNSPECIFIED = 0;
+  CAMERA_STATE_STOPPED     = 1;
+  CAMERA_STATE_STARTING    = 2;
+  CAMERA_STATE_STREAMING   = 3;
+  CAMERA_STATE_ERROR       = 4;
+  CAMERA_STATE_THROTTLED   = 5;  // thermal guard stepped down
+}
+
+// phone -> host, FIRST message on the media connection (a second TLS connection to the control
+// port, same client cert), instead of Hello. ADR 0005.
+message MediaAttach {
+  string session_id = 1;  // Welcome.session_id of the live control session
+  MediaKind kind    = 2;  // round 25; unset = VIDEO (older phones)
+}
+
+// What a media connection carries. A session may hold one connection of each kind at a time; a new
+// attach of the same kind replaces the old one.
+enum MediaKind {
+  MEDIA_KIND_VIDEO = 0;  // H.264 Annex-B camera stream
+  MEDIA_KIND_AUDIO = 1;  // round 25: phone microphone, PCM s16le mono at MicStatus.sample_rate.
+                         // Media header: pts_us = capture time (phone monotonic clock, µs), config and
+                         // key_frame flags unused (0), payload = one frame of samples (MicStart.frame_ms).
+}
+
+// host -> phone, answer to MediaAttach. After ok=true the connection carries only phone -> host
+// media packets (nd_proto::media framing). ok=false is followed by a close.
+message MediaAttached {
+  bool   ok    = 1;
+  string error = 2;
+}
+
+// phone -> host. Sent after Hello (modes only) and on every state change.
+message CameraStatus {
+  CameraState state = 1;
+  CameraStart active = 2;   // actual applied config when streaming
+  repeated CameraMode supported_modes = 3;
+  string error = 4;
+  repeated LensCaps lens_caps = 5;   // round 15; empty from older phones
+}
+
+// ---------------------------------------------------------------- microphone (round 25)
+
+// host -> phone. Start capturing the microphone. The phone opens a media connection with
+// MediaAttach.kind = MEDIA_KIND_AUDIO and streams PCM until MicStop or the session ends.
+// A MicStart while streaming applies the new settings (the phone may restart the recorder).
+message MicStart {
+  uint32 sample_rate      = 1;  // wanted rate, normally 48000; the phone reports the real one in MicStatus
+  uint32 frame_ms         = 2;  // samples per media packet, in ms (10..40, default 20)
+  bool   voice_processing = 3;  // VOICE_COMMUNICATION source + noise suppression / AGC / echo cancel when
+                                // available; false = raw MIC source
+}
+
+message MicStop {}
+
+enum MicState {
+  MIC_STATE_UNSPECIFIED   = 0;
+  MIC_STATE_STOPPED       = 1;
+  MIC_STATE_STARTING      = 2;
+  MIC_STATE_STREAMING     = 3;
+  MIC_STATE_ERROR         = 4;
+  MIC_STATE_NO_PERMISSION = 5;  // RECORD_AUDIO not granted; the phone asks the user when it is visible
+}
+
+// phone -> host. Sent after Hello (state STOPPED, or NO_PERMISSION) and on every state change.
+message MicStatus {
+  MicState state       = 1;
+  string   error       = 2;  // human readable, for ERROR
+  uint32   sample_rate = 3;  // actual capture rate while STARTING/STREAMING (48000, else 44100 / 16000)
+}
+
+// ------------------------------------------------------------------ health
+
+// phone -> host, every 30 s and on significant change.
+message DeviceHealth {
+  uint32 battery_percent  = 1;
+  float  battery_temp_c   = 2;
+  bool   charging         = 3;
+  bool   thermal_throttled = 4;
+}
+
+// --------------------------------------------------------------- heartbeat
+
+// Either side may ping every 2 s; 3 missed pongs = dead session.
+message Ping {
+  uint64 nonce = 1;
+}
+
+message Pong {
+  uint64 nonce = 1;
+  // Round 21: the replier's wall clock (unix ms) when it sent this Pong; 0 = unknown (older builds). The phone
+  // pairs it with its own send/receive wall times to estimate the host clock offset (min-RTT sample).
+  int64 host_time_ms = 2;
+}

@@ -1,0 +1,65 @@
+[package]
+name = "nd-agent"
+description = "Notideck host agent daemon"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "nd_agent"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nd-agent"
+path = "src/main.rs"
+
+[features]
+# Window + tray on Linux (needs webkit2gtk-4.1, gtk3, ayatana-appindicator dev packages).
+# On Windows the GUI is always built.
+linux-gui = ["dep:tao", "dep:wry", "dep:tray-icon", "dep:gtk"]
+
+[dependencies]
+nd-proto.workspace = true
+nd-platform = { workspace = true, features = ["native"] }
+nd-core.workspace = true
+nd-transport.workspace = true
+nd-config.workspace = true
+nd-media.workspace = true
+nd-vcam.workspace = true
+nd-obs.workspace = true
+nd-plugin.workspace = true
+uuid.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+tracing-appender = "0.2.5"
+serde.workspace = true
+serde_json.workspace = true
+base64.workspace = true
+png = "0.18.1"
+ureq = { version = "2", default-features = false, features = ["tls", "gzip"] }
+url = "2"
+mdns-sd.workspace = true
+if-addrs.workspace = true
+
+[target."cfg(windows)".dependencies]
+tao = "0.37"
+tray-icon = "0.26"
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_System_Console", "Win32_Graphics_Dwm", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell", "Win32_System_Registry"] }
+wry = "0.57"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+gtk = { version = "0.18", optional = true }
+tao = { version = "0.37", optional = true }
+tray-icon = { version = "0.26", optional = true }
+wry = { version = "0.57", optional = true }
+
+[target."cfg(unix)".dependencies]
+libc = "0.2.190"
+
+[build-dependencies]
+embed-resource = "3"
+
+[dev-dependencies]
+nd-fakephone.workspace = true

@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "author": "Notideck",
+  "protocol": 1,
+  "icon": "icons/plugin.svg",
+  "id": "dev.notideck.http",
+  "name": "HTTP Request",
+  "description": "Send an HTTP request from a key and optionally show a value from the JSON reply.",
+  "entry": {
+    "windows": "http.exe",
+    "linux": "http"
+  },
+  "permissions": [
+    "network"
+  ],
+  "actions": [
+    {
+      "id": "request",
+      "name": "HTTP request",
+      "description": "Press to send the request. The key flashes a check on 2xx and a warning otherwise.",
+      "icon": "icons/request.svg",
+      "controls": [
+        "key"
+      ],
+      "triggers": [
+        "key_down"
+      ],
+      "settings": [
+        {
+          "key": "method",
+          "label": "Method",
+          "type": "select",
+          "default": "GET",
+          "options": [
+            {
+              "value": "GET",
+              "label": "GET"
+            },
+            {
+              "value": "POST",
+              "label": "POST"
+            },
+            {
+              "value": "PUT",
+              "label": "PUT"
+            },
+            {
+              "value": "DELETE",
+              "label": "DELETE"
+            }
+          ]
+        },
+        {
+          "key": "url",
+          "label": "URL",
+          "type": "text",
+          "placeholder": "https://example.com/api"
+        },
+        {
+          "key": "headers",
+          "label": "Headers",
+          "type": "textarea",
+          "placeholder": "Authorization: Bearer ...",
+          "help": "One \"Name: value\" per line."
+        },
+        {
+          "key": "body",
+          "label": "Body",
+          "type": "textarea"
+        },
+        {
+          "key": "content_type",
+          "label": "Content type",
+          "type": "text",
+          "default": "application/json",
+          "help": "Used when there is a body and no Content-Type header."
+        },
+        {
+          "key": "show",
+          "label": "Show value",
+          "type": "text",
+          "placeholder": "/data/temp",
+          "help": "JSON pointer into the reply; the key title shows that value."
+        },
+        {
+          "key": "interval",
+          "label": "Poll every (seconds)",
+          "type": "number",
+          "min": 0,
+          "max": 86400,
+          "step": 1,
+          "default": 0,
+          "help": "0 = only when pressed. Polls while the key is on screen."
+        }
+      ]
+    }
+  ]
+}
