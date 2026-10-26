@@ -44,7 +44,7 @@ fi
 
 REGISTRY="${CARGO_HOME:-$HOME/.cargo}/registry/src"
 mkdir -p "$(dirname "$OUT")"
-python3 -I - "$META" "$OUT" "${TARGET:-all targets}" "$VERSION" "$WV2_VER" "$REGISTRY" <<'PY'
+WV2_LICENSE="$REPO/packaging/windows/WebView2-LICENSE.txt" python3 -I - "$META" "$OUT" "${TARGET:-all targets}" "$VERSION" "$WV2_VER" "$REGISTRY" <<'PY'
 import json, os, re, sys, glob, collections
 
 meta_path, out_path, target, version, wv2_ver, registry = sys.argv[1:7]
@@ -215,10 +215,11 @@ if wv2_files:
         refs.append("%s -> [%d]" % (n, ref(read(fp), "%s from the WebView2 loader (webview2-com-sys)" % n, "WebView2Loader.dll")))
     o.append("Licence file(s) found in the crate package: " + "; ".join(refs))
 else:
-    o.append("The crate package ships no licence file for the DLL (only the crate's own licence, "
-             "MIT, declared in Cargo.toml). The WebView2 SDK itself is distributed by Microsoft under "
-             "a BSD-3-Clause style licence, Copyright (C) Microsoft Corporation. All rights reserved.")
-    sys.stderr.write("note: webview2-com-sys %s ships no licence file for WebView2Loader.dll\n" % wv2_ver)
+    # The crate ships no licence file for the DLL. packaging/windows/WebView2-LICENSE.txt is the LICENSE.txt
+    # of Microsoft's Microsoft.Web.WebView2 NuGet package (nuget.org/packages/Microsoft.Web.WebView2).
+    o.append("Licence: Microsoft WebView2 SDK licence (BSD-3-Clause style), from the Microsoft.Web.WebView2 "
+             "NuGet package, full text in section 4 as [%d]."
+             % ref(read(os.environ["WV2_LICENSE"]), "Microsoft WebView2 SDK (Microsoft.Web.WebView2 NuGet)", "WebView2Loader.dll"))
 o.append("")
 o.append(H); o.append("3. Rust crates (%d)" % len(pkgs)); o.append(H)
 o.append("")

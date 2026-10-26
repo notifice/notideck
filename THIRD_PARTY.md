@@ -14,7 +14,7 @@ from `Cargo.lock`.
 | Component | Licence | Where |
 |---|---|---|
 | [Android platform-tools](https://developer.android.com/tools/releases/platform-tools) (`adb`) by Google | Apache-2.0 (plus the notices in `adb-NOTICE.txt`) | Windows and Linux packages. Downloaded unmodified from Google at build time. |
-| `WebView2Loader.dll` from the [Microsoft WebView2 SDK](https://developer.microsoft.com/microsoft-edge/webview2/) | BSD-3-Clause style, redistribution allowed | Windows package. The WebView2 runtime itself is part of Windows and is not bundled. |
+| `WebView2Loader.dll` from the [Microsoft WebView2 SDK](https://developer.microsoft.com/microsoft-edge/webview2/) | BSD-3-Clause style (text from the [Microsoft.Web.WebView2](https://www.nuget.org/packages/Microsoft.Web.WebView2) package, kept in `packaging/windows/WebView2-LICENSE.txt`) | Windows package. The WebView2 runtime itself is part of Windows and is not bundled. |
 | [AppImage runtime](https://github.com/AppImage/type2-runtime), built in by [appimagetool](https://github.com/AppImage/appimagetool) | MIT | Linux AppImage |
 | [NSIS](https://nsis.sourceforge.io/) installer stub | zlib/libpng | Windows setup program |
 
