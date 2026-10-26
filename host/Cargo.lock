@@ -2073,7 +2073,7 @@ dependencies = [
 
 [[package]]
 name = "nd-agent"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "base64",
@@ -2110,7 +2110,7 @@ dependencies = [
 
 [[package]]
 name = "nd-config"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "axum",
  "http-body-util",
@@ -2126,7 +2126,7 @@ dependencies = [
 
 [[package]]
 name = "nd-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "hex",
@@ -2142,7 +2142,7 @@ dependencies = [
 
 [[package]]
 name = "nd-fakephone"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bytes",
  "nd-proto",
@@ -2162,7 +2162,7 @@ dependencies = [
 
 [[package]]
 name = "nd-media"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bytes",
  "nd-proto",
@@ -2174,7 +2174,7 @@ dependencies = [
 
 [[package]]
 name = "nd-obs"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64",
  "futures-util",
@@ -2190,7 +2190,7 @@ dependencies = [
 
 [[package]]
 name = "nd-platform"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "evdev",
  "jpeg-encoder",
@@ -2210,7 +2210,7 @@ dependencies = [
 
 [[package]]
 name = "nd-plugin"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64",
  "futures-util",
@@ -2229,7 +2229,7 @@ dependencies = [
 
 [[package]]
 name = "nd-plugin-sdk"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "futures-util",
  "serde",
@@ -2240,7 +2240,7 @@ dependencies = [
 
 [[package]]
 name = "nd-proto"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bytes",
  "prost",
@@ -2252,7 +2252,7 @@ dependencies = [
 
 [[package]]
 name = "nd-transport"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64",
  "bytes",
@@ -2276,7 +2276,7 @@ dependencies = [
 
 [[package]]
 name = "nd-vcam"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "libc",
@@ -2286,7 +2286,7 @@ dependencies = [
 
 [[package]]
 name = "nd-vcam-dll"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nd-vcam",
  "windows 0.58.0",
@@ -2365,7 +2365,7 @@ dependencies = [
 
 [[package]]
 name = "notideck-plugin-clock"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "nd-plugin-sdk",
@@ -2375,7 +2375,7 @@ dependencies = [
 
 [[package]]
 name = "notideck-plugin-http"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nd-plugin-sdk",
  "serde_json",
@@ -2385,7 +2385,7 @@ dependencies = [
 
 [[package]]
 name = "notideck-plugin-weather"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "nd-plugin-sdk",
  "serde_json",

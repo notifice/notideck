@@ -4,13 +4,15 @@ All notable changes to Notideck are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.1] - 2026-10-26
 
 ### Changed
 
 - **Lower phone-microphone latency.** The PC keeps less audio buffered (30 ms on Windows instead of 60, growing
   only after dropouts), drains built-up delay by playing about 1% faster instead of letting it creep up to 150 ms
   and skip, and the phone sends 10 ms packets instead of 20 ms.
+- **Phone microphone tested on Windows.** It has now been used on real hardware through VB-CABLE (it was
+  only tested on Linux in 0.2.0).
 
 ## [0.2.0] - 2026-10-26
 
