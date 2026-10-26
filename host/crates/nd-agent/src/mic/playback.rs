@@ -83,7 +83,7 @@ impl Drop for Playback {
 }
 
 fn run(mut stream: Box<dyn MicStream>, rate: u32, rx: Receiver<Vec<i16>>, sh: Arc<Shared>, muted: Arc<AtomicBool>) {
-    let mut jitter = Jitter::with_target(rate, stream.target_ms());
+    let mut jitter = Jitter::adaptive(rate, stream.target_ms(), logic::TARGET_CEIL_MS.max(stream.target_ms()));
     let mut meter = LevelMeter::default();
     let mut publish_at = Instant::now();
     while !sh.stop.load(Ordering::Relaxed) {

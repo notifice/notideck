@@ -373,20 +373,59 @@ impl LevelMeter {
 
 pub const PREBUFFER_MS: u32 = 40;
 pub const TARGET_MS: u32 = 60;
+pub const TARGET_CEIL_MS: u32 = 60;
 pub const MAX_MS: u32 = 150;
 pub const STARVE_MS: u64 = 40;
+/// Window over which the minimum queue length (the "standing backlog") is measured.
+pub const BACKLOG_WINDOW: Duration = Duration::from_millis(500);
+/// Start / stop catching up when the standing backlog is above / below these (ms).
+pub const CATCHUP_START_MS: u32 = 8;
+pub const CATCHUP_STOP_MS: u32 = 2;
+/// While catching up, audio is consumed this much faster (1%).
+pub const CATCHUP_RATIO: f64 = 1.01;
+/// Adaptive target: raise by this per underrun episode, lower by half of it after quiet periods.
+pub const TARGET_STEP_MS: u32 = 10;
+pub const TARGET_DECAY_STEP_MS: u32 = 5;
+pub const TARGET_DECAY_AFTER: Duration = Duration::from_secs(20);
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct JitterCounters {
     pub underruns: u64,
     pub dropped_ms: u64,
+    /// Milliseconds of input audio removed by drift catch-up.
+    pub catchup_ms: u64,
 }
 
-/// Keeps the device queue near [`TARGET_MS`]. `push` packets as they arrive; call `plan` often with
-/// the device's current queue length and write what it returns.
+/// Linearly resample `input` to exactly `out_len` samples (first and last samples are preserved).
+pub fn stretch(input: &[i16], out_len: usize) -> Vec<i16> {
+    if out_len == 0 || input.is_empty() {
+        return vec![0; out_len];
+    }
+    if input.len() == 1 || out_len == 1 {
+        return vec![input[0]; out_len];
+    }
+    let step = (input.len() - 1) as f64 / (out_len - 1) as f64;
+    let mut out = Vec::with_capacity(out_len);
+    for i in 0..out_len {
+        let pos = i as f64 * step;
+        let i0 = (pos.floor() as usize).min(input.len() - 1);
+        let i1 = (i0 + 1).min(input.len() - 1);
+        let frac = pos - i0 as f64;
+        let v = f64::from(input[i0]) * (1.0 - frac) + f64::from(input[i1]) * frac;
+        out.push(v.round().clamp(-32768.0, 32767.0) as i16);
+    }
+    out[0] = input[0];
+    out[out_len - 1] = input[input.len() - 1];
+    out
+}
+
+/// Keeps the device queue near the (adaptive) target. `push` packets as they arrive; call `plan` often
+/// with the device's current queue length and write what it returns.
 #[derive(Debug)]
 pub struct Jitter {
     rate: u32,
+    floor_ms: u32,
+    ceil_ms: u32,
     target_ms: u32,
     prebuffer_ms: u32,
     max_ms: u32,
@@ -395,6 +434,14 @@ pub struct Jitter {
     had_data: bool,
     starving: bool,
     last_packet: Option<Instant>,
+    /// Last underrun or decay step (baseline for the next decay).
+    last_event: Option<Instant>,
+    win_start: Option<Instant>,
+    win_min: usize,
+    prev_min: Option<usize>,
+    catching_up: bool,
+    catchup_samples: u64,
+    catchup_acc: f64,
     pub counters: JitterCounters,
 }
 
@@ -403,20 +450,47 @@ impl Jitter {
         Self::with_target(rate, TARGET_MS)
     }
 
-    /// Keep `target_ms` queued in the device; prebuffer `min(40, target)`, drop above `target + 90`.
+    /// Fixed target: keep `target_ms` queued in the device; prebuffer `min(40, target)`, drop above `target + 90`.
     pub fn with_target(rate: u32, target_ms: u32) -> Self {
-        Jitter {
+        Self::adaptive(rate, target_ms, target_ms)
+    }
+
+    /// Target starts at `floor_ms`, grows by 10 ms per underrun up to `ceil_ms`, decays 5 ms per quiet 20 s.
+    pub fn adaptive(rate: u32, floor_ms: u32, ceil_ms: u32) -> Self {
+        let mut j = Jitter {
             rate: rate.max(1),
-            target_ms,
-            prebuffer_ms: PREBUFFER_MS.min(target_ms),
-            max_ms: target_ms + (MAX_MS - TARGET_MS),
+            floor_ms,
+            ceil_ms: ceil_ms.max(floor_ms),
+            target_ms: floor_ms,
+            prebuffer_ms: 0,
+            max_ms: 0,
             queue: VecDeque::new(),
             prebuffering: true,
             had_data: false,
             starving: false,
             last_packet: None,
+            last_event: None,
+            win_start: None,
+            win_min: usize::MAX,
+            prev_min: None,
+            catching_up: false,
+            catchup_samples: 0,
+            catchup_acc: 0.0,
             counters: JitterCounters::default(),
-        }
+        };
+        j.set_target(floor_ms);
+        j
+    }
+
+    fn set_target(&mut self, t: u32) {
+        self.target_ms = t;
+        self.prebuffer_ms = PREBUFFER_MS.min(t);
+        self.max_ms = t + (MAX_MS - TARGET_MS);
+    }
+
+    /// Current target (ms).
+    pub fn target_ms(&self) -> u32 {
+        self.target_ms
     }
 
     fn samples(&self, ms: u32) -> usize {
@@ -442,8 +516,44 @@ impl Jitter {
         ((device_queued + self.queue.len()) as u64 * 1000 / self.rate as u64) as u32
     }
 
+    /// Decay the target after a quiet period.
+    fn decay(&mut self, now: Instant) {
+        let last = *self.last_event.get_or_insert(now);
+        if self.target_ms > self.floor_ms && now.duration_since(last) >= TARGET_DECAY_AFTER {
+            self.set_target(self.target_ms.saturating_sub(TARGET_DECAY_STEP_MS).max(self.floor_ms));
+            self.last_event = Some(now);
+        }
+    }
+
+    /// Track the standing backlog and update the catch-up state (hysteresis).
+    fn track_backlog(&mut self, now: Instant) {
+        let start = *self.win_start.get_or_insert(now);
+        if now.duration_since(start) >= BACKLOG_WINDOW {
+            self.prev_min = Some(self.win_min);
+            self.win_min = usize::MAX;
+            self.win_start = Some(now);
+        }
+        if !self.prebuffering {
+            self.win_min = self.win_min.min(self.queue.len());
+        }
+        // Min of the previous complete window and the current partial one: falls as soon as it drains.
+        let Some(prev) = self.prev_min else {
+            self.catching_up = false;
+            return;
+        };
+        let standing = prev.min(self.win_min);
+        if self.catching_up {
+            if standing < self.samples(CATCHUP_STOP_MS) {
+                self.catching_up = false;
+            }
+        } else if standing > self.samples(CATCHUP_START_MS) {
+            self.catching_up = true;
+        }
+    }
+
     /// Samples to write to the device now (empty = nothing).
     pub fn plan(&mut self, now: Instant, device_queued: usize) -> Vec<i16> {
+        self.decay(now);
         let target = self.samples(self.target_ms);
         // Too much buffered overall: drop the oldest back to the target.
         if device_queued + self.queue.len() > self.samples(self.max_ms) {
@@ -451,6 +561,7 @@ impl Jitter {
             self.queue.drain(..excess);
             self.counters.dropped_ms += (excess as u64 * 1000) / self.rate as u64;
         }
+        self.track_backlog(now);
         let need = target.saturating_sub(device_queued);
         if need == 0 {
             return Vec::new();
@@ -468,6 +579,20 @@ impl Jitter {
             }
             return Vec::new();
         }
+        if self.catching_up {
+            // Fractional extra samples carry over, so small writes still catch up at the full 1%.
+            let want = self.catchup_acc + need as f64 * (CATCHUP_RATIO - 1.0);
+            let n_in = need + want.floor() as usize;
+            if self.queue.len() >= n_in {
+                self.catchup_acc = want - (n_in - need) as f64;
+                let input: Vec<i16> = self.queue.drain(..n_in).collect();
+                self.had_data = true;
+                self.starving = false;
+                self.catchup_samples += (n_in - need) as u64;
+                self.counters.catchup_ms = self.catchup_samples * 1000 / self.rate as u64;
+                return stretch(&input, need);
+            }
+        }
         let n = need.min(self.queue.len());
         let mut out: Vec<i16> = self.queue.drain(..n).collect();
         if n > 0 {
@@ -479,6 +604,8 @@ impl Jitter {
             if !self.starving {
                 self.counters.underruns += 1;
                 self.starving = true;
+                self.set_target((self.target_ms + TARGET_STEP_MS).min(self.ceil_ms));
+                self.last_event = Some(now);
             }
             self.prebuffering = true;
             out.resize(need, 0);
@@ -1031,6 +1158,115 @@ mod tests {
         j.note_dropped(ms(20));
         assert_eq!(j.counters.dropped_ms, 20);
         assert_eq!(j.buffer_ms(ms(30)), 30);
+    }
+
+    #[test]
+    fn stretch_basics() {
+        assert!(stretch(&[], 0).is_empty());
+        let input: Vec<i16> = (0..101).map(|i| i * 10).collect();
+        let out = stretch(&input, 100);
+        assert_eq!(out.len(), 100);
+        assert_eq!(out[0], input[0]);
+        assert_eq!(out[99], input[100]);
+        assert!(out.windows(2).all(|w| w[0] <= w[1]));
+        assert_eq!(stretch(&input, 101), input);
+        assert_eq!(stretch(&[7], 3), vec![7, 7, 7]);
+        assert_eq!(stretch(&[-5, 5], 5), vec![-5, -3, 0, 3, 5]);
+    }
+
+    /// Simulate 1 ms ticks: the device consumes at the real rate, packets arrive at `arrivals` (ms).
+    fn simulate(j: &mut Jitter, base: Instant, ms_total: u32, arrivals: &[u32], mut device: usize) -> usize {
+        let mut next = 0;
+        for t in 0..ms_total {
+            let now = base + Duration::from_millis(t as u64);
+            device = device.saturating_sub(ms(1));
+            while next < arrivals.len() && arrivals[next] <= t {
+                j.push(now, &vec![1; ms(10)]);
+                next += 1;
+            }
+            device += j.plan(now, device).len();
+        }
+        device
+    }
+
+    #[test]
+    fn catchup_drains_standing_backlog() {
+        let mut j = Jitter::new(R);
+        let base = Instant::now();
+        // 60 ms in the device and a 30 ms backlog queued (10 ms of it is the packet sawtooth, 20 ms standing), then a steady 10 ms / 10 ms stream.
+        j.push(base, &vec![1; ms(90)]);
+        let mut device = j.plan(base, 0).len();
+        assert_eq!(device, ms(60));
+        assert_eq!(j.queued(), ms(30));
+        let arrivals: Vec<u32> = (1..600).map(|k| k * 10).collect();
+        device = simulate(&mut j, base, 6000, &arrivals, device);
+        let total = j.buffer_ms(device);
+        assert!((50..=72).contains(&total), "total {total}");
+        assert!(j.counters.catchup_ms >= 15, "catchup {}", j.counters.catchup_ms);
+        assert_eq!(j.counters.dropped_ms, 0);
+        assert_eq!(j.counters.underruns, 0);
+    }
+
+    #[test]
+    fn no_catchup_with_bursty_arrival() {
+        let mut j = Jitter::new(R);
+        let base = Instant::now();
+        j.push(base, &vec![1; ms(60)]);
+        let device = j.plan(base, 0).len();
+        // Deterministic +-5 ms jitter on a 10 ms cadence.
+        let mut seed = 12345u32;
+        let mut arrivals: Vec<u32> = (2..900)
+            .map(|k| {
+                seed = seed.wrapping_mul(1103515245).wrapping_add(12345);
+                let jit = (seed >> 16) % 11; // 0..=10 -> -5..=5
+                (k * 10 + jit).saturating_sub(5)
+            })
+            .collect();
+        arrivals.sort_unstable();
+        simulate(&mut j, base, 9000, &arrivals, device);
+        assert_eq!(j.counters.catchup_ms, 0);
+        assert_eq!(j.counters.dropped_ms, 0);
+    }
+
+    #[test]
+    fn adaptive_target_rises_and_decays() {
+        // One underrun episode: fill the device, then starve it.
+        fn underrun(j: &mut Jitter, t: Instant) {
+            j.push(t, &vec![5; ms(j.target_ms())]);
+            assert_eq!(j.plan(t, 0).len(), ms(j.target_ms()));
+            j.plan(t + Duration::from_millis(STARVE_MS + 5), ms(10));
+        }
+        let mut j = Jitter::adaptive(R, 30, 60);
+        assert_eq!(j.target_ms(), 30);
+        let mut t = Instant::now();
+        underrun(&mut j, t);
+        assert_eq!((j.counters.underruns, j.target_ms()), (1, 40));
+        t += Duration::from_millis(100);
+        underrun(&mut j, t);
+        assert_eq!(j.target_ms(), 50);
+        t += Duration::from_millis(100);
+        underrun(&mut j, t);
+        t += Duration::from_millis(100);
+        underrun(&mut j, t);
+        assert_eq!((j.counters.underruns, j.target_ms()), (4, 60)); // capped at the ceiling
+                                                                    // Quiet: decays 5 ms per 20 s, never below the floor.
+        let q = t + Duration::from_millis(STARVE_MS + 5);
+        j.plan(q + Duration::from_secs(19), 0);
+        assert_eq!(j.target_ms(), 60);
+        j.plan(q + Duration::from_secs(21), 0);
+        assert_eq!(j.target_ms(), 55);
+        j.plan(q + Duration::from_secs(30), 0);
+        assert_eq!(j.target_ms(), 55);
+        j.plan(q + Duration::from_secs(42), 0);
+        assert_eq!(j.target_ms(), 50);
+        for k in 0..20 {
+            j.plan(q + Duration::from_secs(100 + 25 * k), 0);
+        }
+        assert_eq!(j.target_ms(), 30);
+        // Fixed targets never move.
+        let mut f = Jitter::with_target(R, 30);
+        underrun(&mut f, t);
+        assert_eq!(f.target_ms(), 30);
     }
 
     // ---- guard

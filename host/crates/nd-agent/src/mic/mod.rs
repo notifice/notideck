@@ -35,7 +35,8 @@ const TICK: Duration = Duration::from_millis(250);
 /// A packet this recent counts as "audio is flowing".
 const FLOW_WINDOW_MS: u64 = 500;
 const START_RATE: u32 = logic::DEFAULT_RATE;
-const FRAME_MS: u32 = 20;
+/// The phone accepts 10..40 ms; 10 halves the packetisation delay.
+const FRAME_MS: u32 = 10;
 
 pub type SettingsFn = Arc<dyn Fn() -> MicSettings + Send + Sync>;
 

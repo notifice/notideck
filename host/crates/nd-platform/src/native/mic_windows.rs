@@ -381,7 +381,14 @@ fn playback(sh: &Shared, client: &IAudioClient, render: &IAudioRenderClient, buf
     }
 }
 
+/// The engine period is 10 ms and the writer thread polls every 5 ms, so 30 ms leaves >= 15 ms in the device.
+const WASAPI_TARGET_MS: u32 = 30;
+
 impl MicStream for WasapiStream {
+    fn target_ms(&self) -> u32 {
+        WASAPI_TARGET_MS
+    }
+
     fn write(&mut self, samples: &[i16]) -> Result<usize> {
         if self.shared.lost.load(Ordering::Relaxed) {
             return Err(PlatformError::Other("audio output lost".into()));

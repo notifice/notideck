@@ -36,8 +36,9 @@ pub trait MicStream: Send {
     fn write(&mut self, samples: &[i16]) -> Result<usize>;
     /// Samples queued in the device but not yet played, at the stream's rate (for drift control).
     fn queued(&self) -> Result<usize>;
-    /// How much the agent keeps queued in this device (ms). WASAPI keeps the round-25 60 ms; the
-    /// Linux PipeWire stream asks for less because its pipe is drained every graph cycle.
+    /// How much the agent keeps queued in this device (ms). WASAPI 30 ms, grows after underruns (the
+    /// agent's adaptive jitter buffer); the Linux PipeWire stream asks for less because its pipe is
+    /// drained every graph cycle.
     fn target_ms(&self) -> u32 {
         60
     }

@@ -4,6 +4,14 @@ All notable changes to Notideck are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Lower phone-microphone latency.** The PC keeps less audio buffered (30 ms on Windows instead of 60, growing
+  only after dropouts), drains built-up delay by playing about 1% faster instead of letting it creep up to 150 ms
+  and skip, and the phone sends 10 ms packets instead of 20 ms.
+
 ## [0.2.0] - 2026-10-26
 
 First public release. Notideck turns an old Android phone (Android 8 or newer) into a Stream Deck-style
