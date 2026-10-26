@@ -27,8 +27,19 @@ Notideck turns an old Android phone into a Stream Deck-style controller and webc
 |---|---|
 | Phone | Android 8.0 or newer. USB debugging is needed for USB mode and for installing the app from the PC. |
 | PC | Windows 10 or 11 (64-bit), or Linux x86_64. |
-| Webcam | Windows 11, or Linux with the v4l2loopback kernel module. Not on Windows 10. |
-| Microphone | Linux: nothing extra. Windows: the free [VB-CABLE](https://vb-audio.com/Cable/). |
+| Webcam (optional) | Windows 11, or Linux with the v4l2loopback kernel module. Not on Windows 10. |
+| Microphone (optional) | Linux: nothing extra. Windows: the free [VB-CABLE](https://vb-audio.com/Cable/), only if you want this feature. |
+
+Optional extras, each needed only for its own feature:
+
+| Extra | For | How |
+|---|---|---|
+| [VB-CABLE](https://vb-audio.com/Cable/) (Windows) | Phone as a microphone | See [Microphone](#microphone). |
+| Webcam driver (Windows 11) | Phone as a webcam | Camera tab > **Install webcam (needs admin once)**. |
+| `v4l2loopback` (Linux) | Phone as a webcam | Install `v4l2loopback-dkms` (Fedora: `v4l2loopback` from RPM Fusion), then see [Webcam](#webcam). |
+| Keyboard access (Linux) | Hotkey and type-text keys | See [Keyboard access](#keyboard-access). |
+| [OBS Studio](https://obsproject.com/) 28+ | OBS keys and templates | See [OBS](#obs). |
+| AppIndicator extension (GNOME) | Tray icon | From GNOME Extensions. Other desktops have a tray already. |
 | Wi-Fi mode | Phone and PC on the same network. |
 
 ## Install on Windows
@@ -252,7 +263,7 @@ To remove the driver: Settings > **Webcam driver** > **Uninstall...**.
 The phone microphone can be an input for Discord, OBS, Zoom and other apps. Open the **Microphone** tab.
 
 - **Linux:** nothing to install. Turn the microphone on, allow microphone access on the phone, and pick **Notideck Microphone** as the input in your app.
-- **Windows:** Windows can't add a microphone without a signed driver, so Notideck plays the phone sound into a free virtual audio cable:
+- **Windows:** Windows can't add a microphone without a signed driver, so Notideck plays the phone sound into a free virtual audio cable. This is optional: install it only if you want the phone as a microphone.
   1. Download [VB-CABLE](https://vb-audio.com/Cable/) by VB-Audio and unzip it.
   2. Right-click `VBCABLE_Setup_x64.exe`, choose **Run as administrator** and press **Install Driver**. Restart Windows if the installer asks.
   3. Notideck finds the cable by itself. Turn the microphone on in the Microphone tab and allow microphone access on the phone.

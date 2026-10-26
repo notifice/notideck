@@ -30,7 +30,7 @@ controller and webcam for your Windows or Linux PC.
   stabilisation, flash and more) from the Camera tab.
 - **Phone as a microphone.** Use the phone mic in Discord, OBS, Zoom and more from the Microphone tab, with
   gain, mute and on-phone noise suppression. Linux: a "Notideck Microphone" input (PipeWire or PulseAudio).
-  Windows: plays into the free [VB-CABLE](https://vb-audio.com/Cable/); pick "CABLE Output" as
+  Windows: plays into the free [VB-CABLE](https://vb-audio.com/Cable/) (optional install, only needed for this feature); pick "CABLE Output" as
   your input. Notideck keeps your default speaker and mic from switching to the cable.
 - **Linux webcam.** "Notideck Camera" through the v4l2loopback kernel module, set up once from the Camera tab.
 - **Linux app window and tray**, and auto-switch on KDE Plasma Wayland, Sway and Hyprland as well as X11.
@@ -47,9 +47,9 @@ controller and webcam for your Windows or Linux PC.
 ### Platforms
 
 - **Windows 11 (x64):** everything above, including the webcam (virtual camera). The phone microphone needs
-  the free [VB-CABLE](https://vb-audio.com/Cable/).
+  the free [VB-CABLE](https://vb-audio.com/Cable/) (optional, only for the microphone).
 - **Windows 10 (x64):** deck, mixer, media, microphone and plugins. Webcam is not supported.
-- **Linux (x86_64):** everything above, over USB or Wi-Fi. The webcam needs the v4l2loopback kernel module.
+- **Linux (x86_64):** everything above, over USB or Wi-Fi. The webcam needs the v4l2loopback kernel module (optional, only for the webcam).
   Auto-switch works on KDE Plasma (Wayland), Sway, Hyprland and X11.
 - **Phone:** Android 8.0 or newer.
 

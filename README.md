@@ -24,7 +24,7 @@ Licence: GPL-3.0-or-later. Release notes: [`CHANGELOG.md`](CHANGELOG.md).
 - Auto profile switching by focused app (Windows; Linux on KDE Plasma Wayland, Sway, Hyprland and X11; not GNOME Wayland yet).
 - OBS Studio control over obs-websocket.
 - Webcam: the phone camera as "Notideck Camera" in Zoom, Discord, OBS, browsers and more, with lens, torch, zoom and image settings. Windows 11 uses its virtual camera API; Linux uses the v4l2loopback kernel module (one-time setup from the Camera tab).
-- Microphone: the phone mic as an input for Discord, OBS, Zoom and more. Linux gets a "Notideck Microphone" device (PipeWire or PulseAudio). Windows needs the free virtual audio cable **[VB-CABLE](https://vb-audio.com/Cable/)** (download, unzip, run `VBCABLE_Setup_x64.exe` as administrator, then pick "CABLE Output" in your app; steps in the [user guide](docs/USER-GUIDE.md#microphone)).
+- Microphone: the phone mic as an input for Discord, OBS, Zoom and more. Linux gets a "Notideck Microphone" device (PipeWire or PulseAudio). On Windows this feature needs the free virtual audio cable **[VB-CABLE](https://vb-audio.com/Cable/)** (optional, see below).
 - Camera preview tile on the deck, and deck sleep (black screen with a faint clock after 2 minutes idle; first touch wakes it).
 - Native app window and tray icon on Windows and Linux.
 - Plugins: bundled Clock & Timer, HTTP request and Weather; your own plugins in any language.
@@ -54,6 +54,21 @@ Get them from the [Releases page](https://github.com/notifice/notideck/releases/
 - Windows: [setup program or portable zip](docs/USER-GUIDE.md#install-on-windows).
 - Linux: [AppImage or tarball with `install.sh`](docs/USER-GUIDE.md#install-on-linux), plus [keyboard access](docs/USER-GUIDE.md#keyboard-access).
 - Then follow [First run](docs/USER-GUIDE.md#first-run): install the phone app, connect over USB or Wi-Fi.
+
+### Optional extras
+
+Notideck works without any of these. Install one only if you want the feature next to it.
+
+| Extra | Needed for | Where |
+|---|---|---|
+| **[VB-CABLE](https://vb-audio.com/Cable/)** by VB-Audio (free) | Phone as a microphone **on Windows**. Download, unzip, right-click `VBCABLE_Setup_x64.exe` > Run as administrator > Install Driver, then pick "CABLE Output" in Discord, OBS or Zoom. [Steps](docs/USER-GUIDE.md#microphone) | Windows |
+| Notideck webcam driver | Phone as a webcam. One click in the Camera tab (asks for admin once). Not available on Windows 10. | Windows 11 |
+| `v4l2loopback` kernel module | Phone as a webcam. Arch / CachyOS / Debian / Ubuntu: `v4l2loopback-dkms`; Fedora: `v4l2loopback` (RPM Fusion). Then **Set up webcam** in the Camera tab. | Linux |
+| Keyboard access (`/dev/uinput`) | Hotkey and type-text keys. **Settings > Keyboard access > Fix...**, or `install.sh --with-udev`. [Details](docs/USER-GUIDE.md#keyboard-access) | Linux |
+| [OBS Studio](https://obsproject.com/) 28 or newer | OBS keys and templates (uses OBS's built-in WebSocket server). | Both |
+| AppIndicator extension | Tray icon on GNOME (KDE and most other desktops have a tray already). | Linux |
+
+The phone microphone needs nothing extra on Linux (it uses PipeWire or PulseAudio).
 
 The full manual is [`docs/USER-GUIDE.md`](docs/USER-GUIDE.md). To write plugins, see [`docs/PLUGINS.md`](docs/PLUGINS.md).
 
